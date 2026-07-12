@@ -1,5 +1,6 @@
 export type NavigationItemId =
   | 'dashboard'
+  | 'organization'
   | 'users'
   | 'roles'
   | 'permissions'
@@ -20,6 +21,13 @@ export const adminNavigation: NavigationItem[] = [
     label: 'Dashboard',
     path: '/dashboard',
     description: 'Overview of HR operations and admin activity.',
+  },
+  {
+    id: 'organization',
+    label: 'Organization',
+    path: '/organization',
+    description: 'Companies, divisions, departments, and designations.',
+    permission: 'organizations.view',
   },
   {
     id: 'users',

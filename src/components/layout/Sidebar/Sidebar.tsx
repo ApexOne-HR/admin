@@ -1,4 +1,5 @@
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
+import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
@@ -16,6 +17,7 @@ import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
 
 const navigationIcons: Record<NavigationItem['id'], typeof DashboardRoundedIcon> = {
   dashboard: DashboardRoundedIcon,
+  organization: AccountTreeRoundedIcon,
   users: PeopleRoundedIcon,
   roles: SecurityRoundedIcon,
   permissions: VpnKeyRoundedIcon,

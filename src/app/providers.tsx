@@ -1,6 +1,8 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { ConfirmProvider } from '@/components/common/feedback/ConfirmProvider';
+import { ToastProvider } from '@/components/common/feedback/ToastProvider';
 import { AdminSessionProvider } from '@/features/auth/hooks/AdminSessionProvider';
 import { muiTheme } from '@/theme/muiTheme';
 
@@ -23,7 +25,11 @@ export function AppProviders({ children }: AppProvidersProps) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
-        <AdminSessionProvider>{children}</AdminSessionProvider>
+        <ToastProvider>
+          <ConfirmProvider>
+            <AdminSessionProvider>{children}</AdminSessionProvider>
+          </ConfirmProvider>
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

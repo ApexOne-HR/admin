@@ -17,6 +17,14 @@ import { AppButton } from '@/components/common/AppButton';
 import { AppModal } from '@/components/common/AppModal';
 import { AppTable, type AppTableColumn } from '@/components/common/AppTable';
 import { EmptyState } from '@/components/common/EmptyState';
+import { useConfirm } from '@/components/common/feedback/ConfirmProvider';
+import { useToast } from '@/components/common/feedback/ToastProvider';
+import {
+  clearFieldError,
+  hasFieldErrors,
+  validateRequiredFields,
+  type FieldErrors,
+} from '@/components/common/form';
 import { PageHeader } from '@/components/layout/PageHeader/PageHeader';
 import type { Role } from '@/features/auth/types/auth.type';
 import { can } from '@/features/auth/services/auth.service';
@@ -54,6 +62,8 @@ const emptyForm: RoleFormState = {
 
 export function RolesPage() {
   const { session } = useAdminSession();
+  const toast = useToast();
+  const confirm = useConfirm();
   const canView = can(session?.user, 'roles.view');
   const rolesQuery = useRolesQuery(canView);
   const permissionsQuery = usePermissionsQuery(undefined, can(session?.user, 'permissions.view'));
@@ -67,6 +77,7 @@ export function RolesPage() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [form, setForm] = useState<RoleFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const [permissionsRole, setPermissionsRole] = useState<Role | null>(null);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
@@ -102,6 +113,7 @@ export function RolesPage() {
     setEditingRole(null);
     setForm(emptyForm);
     setFormError(null);
+    setFieldErrors({});
     setFormOpen(true);
   };
 
@@ -114,11 +126,22 @@ export function RolesPage() {
       is_active: role.is_active,
     });
     setFormError(null);
+    setFieldErrors({});
     setFormOpen(true);
   };
 
   const handleSaveRole = async () => {
     setFormError(null);
+
+    const nextFieldErrors = validateRequiredFields(
+      { name: form.name },
+      [{ key: 'name', label: 'Name' }],
+    );
+    setFieldErrors(nextFieldErrors);
+    if (hasFieldErrors(nextFieldErrors)) {
+      return;
+    }
+
     try {
       if (editingRole) {
         await updateRole.mutateAsync({
@@ -139,20 +162,28 @@ export function RolesPage() {
         });
       }
       setFormOpen(false);
+      toast.success(editingRole ? 'Role updated.' : 'Role created.');
     } catch (error) {
       setFormError(getApiErrorMessage(error));
     }
   };
 
   const handleDelete = async (role: Role) => {
-    if (!window.confirm(`Delete role "${role.name}"?`)) {
+    const ok = await confirm({
+      title: 'Delete role?',
+      description: `Delete role "${role.name}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      confirmColor: 'error',
+    });
+    if (!ok) {
       return;
     }
 
     try {
       await deleteRole.mutateAsync(role.id);
+      toast.success('Role deleted.');
     } catch (error) {
-      window.alert(getApiErrorMessage(error));
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -168,6 +199,7 @@ export function RolesPage() {
         payload: { permission_ids: selectedPermissionIds },
       });
       setPermissionsRole(null);
+      toast.success('Permissions updated.');
     } catch (error) {
       setPermissionsError(getApiErrorMessage(error));
     }
@@ -259,7 +291,7 @@ export function RolesPage() {
             <Button
               variant="contained"
               onClick={() => void handleSaveRole()}
-              disabled={createRole.isPending || updateRole.isPending || !form.name.trim()}
+              disabled={createRole.isPending || updateRole.isPending}
             >
               Save
             </Button>
@@ -271,9 +303,14 @@ export function RolesPage() {
           <TextField
             label="Name"
             value={form.name}
-            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+            onChange={(event) => {
+              setFieldErrors((current) => clearFieldError(current, 'name'));
+              setForm((current) => ({ ...current, name: event.target.value }));
+            }}
             required
             fullWidth
+            error={Boolean(fieldErrors.name)}
+            helperText={fieldErrors.name}
           />
           <TextField
             label="Slug"

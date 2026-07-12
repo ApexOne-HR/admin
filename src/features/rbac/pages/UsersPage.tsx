@@ -11,6 +11,7 @@ import { useMemo, useState } from 'react';
 import { AppModal } from '@/components/common/AppModal';
 import { AppTable, type AppTableColumn } from '@/components/common/AppTable';
 import { EmptyState } from '@/components/common/EmptyState';
+import { useToast } from '@/components/common/feedback/ToastProvider';
 import { PageHeader } from '@/components/layout/PageHeader/PageHeader';
 import type { AdminUser } from '@/features/auth/types/auth.type';
 import { can } from '@/features/auth/services/auth.service';
@@ -29,6 +30,7 @@ import {
 
 export function UsersPage() {
   const { session } = useAdminSession();
+  const toast = useToast();
   const canView = can(session?.user, 'users.view');
   const [page, setPage] = useState(1);
   const perPage = 15;
@@ -81,6 +83,7 @@ export function UsersPage() {
         payload: { role_ids: roleIds },
       });
       setSelectedUser(null);
+      toast.success('User roles updated.');
     } catch (error) {
       setAssignError(getApiErrorMessage(error));
     }

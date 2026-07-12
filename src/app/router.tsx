@@ -1,5 +1,6 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
+import { OrganizationPage } from '@/features/organization/pages/OrganizationPage';
 import { PermissionsPage } from '@/features/rbac/pages/PermissionsPage';
 import { RolesPage } from '@/features/rbac/pages/RolesPage';
 import { UsersPage } from '@/features/rbac/pages/UsersPage';
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
               />
             ),
           },
+          { path: 'organization', element: <OrganizationPage /> },
           { path: 'users', element: <UsersPage /> },
           { path: 'roles', element: <RolesPage /> },
           { path: 'permissions', element: <PermissionsPage /> },

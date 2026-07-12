@@ -80,7 +80,9 @@ RolesPage
 - Shell: `AdminLayout` + `Sidebar` (from `config/navigation.ts`) + `Navbar`
 - Lists: `AppTable` + `EmptyState` / `ErrorState` / `AppLoader`
 - Dialogs: `AppModal`
+- Confirm / toast: `useConfirm()` + `useToast()` from `@/components/common/feedback`
 - Prefer MUI for forms/controls; Tailwind for layout utilities
+- Forms: mark required fields with `required` (red `*` via theme); validate with `validateRequiredFields` from `@/components/common/form`
 
 ## Adding a new Admin feature (checklist)
 

@@ -132,6 +132,20 @@ const baseTheme = createTheme({
         },
       },
     },
+    MuiFormLabel: {
+      styleOverrides: {
+        asterisk: {
+          color: palette.danger[500],
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        asterisk: {
+          color: palette.danger[500],
+        },
+      },
+    },
   },
 });
 

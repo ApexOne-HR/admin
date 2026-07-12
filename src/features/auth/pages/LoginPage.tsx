@@ -1,6 +1,12 @@
 import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import { useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  clearFieldError,
+  hasFieldErrors,
+  validateRequiredFields,
+  type FieldErrors,
+} from '@/components/common/form';
 import { getApiErrorMessage } from '@/infra/http/getApiErrorMessage';
 import { useAdminSession } from '../hooks/useAdminSession';
 
@@ -17,11 +23,25 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+
+    const nextFieldErrors = validateRequiredFields(
+      { email, password },
+      [
+        { key: 'email', label: 'Email' },
+        { key: 'password', label: 'Password' },
+      ],
+    );
+    setFieldErrors(nextFieldErrors);
+    if (hasFieldErrors(nextFieldErrors)) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -55,24 +75,34 @@ export function LoginPage() {
             <Stack spacing={3}>
               {error ? <Alert severity="error">{error}</Alert> : null}
 
-              <Stack component="form" spacing={2.5} onSubmit={handleSubmit}>
+              <Stack component="form" spacing={2.5} onSubmit={handleSubmit} noValidate>
                 <TextField
                   label="Email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    setFieldErrors((current) => clearFieldError(current, 'email'));
+                    setEmail(event.target.value);
+                  }}
                   type="email"
                   autoComplete="email"
                   required
                   fullWidth
+                  error={Boolean(fieldErrors.email)}
+                  helperText={fieldErrors.email}
                 />
                 <TextField
                   label="Password"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) => {
+                    setFieldErrors((current) => clearFieldError(current, 'password'));
+                    setPassword(event.target.value);
+                  }}
                   type="password"
                   autoComplete="current-password"
                   required
                   fullWidth
+                  error={Boolean(fieldErrors.password)}
+                  helperText={fieldErrors.password}
                 />
                 <Button type="submit" variant="contained" size="large" disabled={isSubmitting} fullWidth>
                   {isSubmitting ? 'Signing in...' : 'Sign in'}
