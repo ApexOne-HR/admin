@@ -8,7 +8,6 @@ export type AdminSessionContextValue = {
   token: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
 };
 
 export const AdminSessionContext = createContext<AdminSessionContextValue | null>(null);

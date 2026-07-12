@@ -1,33 +1,10 @@
-import { ApiError, apiRequest } from '@/infra/http/apiClient';
+import { apiRequest } from '@/infra/http/apiClient';
 import type { AdminSession, AdminUser, LoginCredentials, LoginResponseData } from '../types/auth.type';
 
 const SESSION_STORAGE_KEY = 'apex-hr-admin-session';
 
 function canUseStorage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-}
-
-export function getAuthErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 422 && error.body?.errors) {
-      const firstFieldErrors = Object.values(error.body.errors)[0];
-      if (firstFieldErrors?.[0]) {
-        return firstFieldErrors[0];
-      }
-    }
-
-    if (error.status === 429) {
-      return 'Too many login attempts. Please wait and try again.';
-    }
-
-    return error.message;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return 'Unable to sign in';
 }
 
 export function getStoredAdminSession(): AdminSession | null {
@@ -105,13 +82,11 @@ export async function logoutAdmin(token: string | null): Promise<void> {
 }
 
 export function can(user: AdminUser | null | undefined, permission: string): boolean {
-  if (!user?.role?.is_active) {
+  if (!user?.roles?.length) {
     return false;
   }
 
-  return Boolean(user.role.permissions?.some((item) => item.slug === permission));
-}
-
-export function canAny(user: AdminUser | null | undefined, permissions: string[]): boolean {
-  return permissions.some((permission) => can(user, permission));
+  return user.roles.some(
+    (role) => role.is_active && role.permissions?.some((item) => item.slug === permission),
+  );
 }

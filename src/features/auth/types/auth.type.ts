@@ -21,7 +21,7 @@ export type AdminUser = {
   id: number;
   name: string;
   email: string;
-  role: Role | null;
+  roles: Role[];
   created_at: string;
   updated_at: string;
 };

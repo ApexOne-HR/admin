@@ -1,11 +1,11 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
-import { LoginRoute } from './routes/LoginRoute';
-import { ModulePlaceholderPage } from './routes/ModulePlaceholderPage';
-import { ProtectedRoute } from './routes/ProtectedRoute';
 import { PermissionsPage } from '@/features/rbac/pages/PermissionsPage';
 import { RolesPage } from '@/features/rbac/pages/RolesPage';
 import { UsersPage } from '@/features/rbac/pages/UsersPage';
+import { ComingSoonPage } from './routes/ComingSoonPage';
+import { LoginRoute } from './routes/LoginRoute';
+import { ProtectedRoute } from './routes/ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
@@ -18,55 +18,25 @@ export const router = createBrowserRouter([
       {
         element: <AdminLayout />,
         children: [
-          {
-            index: true,
-            element: <Navigate to="/dashboard" replace />,
-          },
+          { index: true, element: <Navigate to="/dashboard" replace /> },
           {
             path: 'dashboard',
             element: (
-              <ModulePlaceholderPage
+              <ComingSoonPage
                 title="Dashboard"
                 description="Overview of HR operations and admin activity."
               />
             ),
           },
-          {
-            path: 'users',
-            element: <UsersPage />,
-          },
-          {
-            path: 'notifications',
-            element: (
-              <ModulePlaceholderPage
-                title="Notifications"
-                description="Monitor notification tools and future broadcast workflows."
-              />
-            ),
-          },
-          {
-            path: 'admins',
-            element: (
-              <ModulePlaceholderPage
-                title="Admins"
-                description="Manage dashboard administrator accounts."
-              />
-            ),
-          },
-          {
-            path: 'admins/roles',
-            element: <RolesPage />,
-          },
-          {
-            path: 'admins/permissions',
-            element: <PermissionsPage />,
-          },
+          { path: 'users', element: <UsersPage /> },
+          { path: 'roles', element: <RolesPage /> },
+          { path: 'permissions', element: <PermissionsPage /> },
           {
             path: 'settings',
             element: (
-              <ModulePlaceholderPage
+              <ComingSoonPage
                 title="Settings"
-                description="Manage local admin preferences and future system settings."
+                description="Admin preferences and system settings."
               />
             ),
           },
@@ -74,8 +44,5 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  {
-    path: '*',
-    element: <Navigate to="/dashboard" replace />,
-  },
+  { path: '*', element: <Navigate to="/dashboard" replace /> },
 ]);

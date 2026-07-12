@@ -48,21 +48,22 @@ Use `response.data` in UI. Pagination lives in `response.meta` when present.
 3. All protected calls: `apiRequest(path, { token })`
 4. `POST /auth/logout` → clear local session
 
-Session provider wraps the app (`AdminSessionProvider`). Replace demo/localStorage auth with Laravel when wiring RBAC.
+Session provider wraps the app (`AdminSessionProvider`). Token + user are stored in `localStorage` under `apex-hr-admin-session`.
 
 ## RBAC UI pattern
 
-- One role per user: `user.role` or `null`
-- Gate with permission slugs: `user.role.permissions[].slug`
+- Multiple roles per user: `user.roles[]` (may be empty)
+- Gate with permission slugs across all active roles: `user.roles[].permissions[].slug`
 - Example: show “Create role” only if `can(user, 'roles.create')`
 - Permission matrix save: send **full** `permission_ids` (replace), never a partial diff
+- User roles save: send **full** `role_ids` (replace), never a partial diff
 
 ## TanStack Query conventions
 
 - Query keys: `['admin', '{resource}', ...params]` e.g. `['admin', 'roles']`, `['admin', 'users', { page }]`
 - Mutations invalidate related keys after success
 - Defaults already set in `app/providers.tsx` (`staleTime`, `retry`, no refetch on focus)
-- Prefer Query for server state; keep form draft state local (`useState` / RHF)
+- Prefer Query for server state; keep form draft state local (`useState`)
 
 ## Example flow (roles list)
 

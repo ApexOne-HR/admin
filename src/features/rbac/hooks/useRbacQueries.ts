@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
 import * as rbacService from '../services/rbac.service';
 import type {
-  AssignUserRolePayload,
+  SyncUserRolesPayload,
   CreateRolePayload,
   SyncRolePermissionsPayload,
   UpdateRolePayload,
@@ -29,16 +29,6 @@ export function useRolesQuery(enabled = true) {
     queryKey: rbacKeys.roles,
     enabled: enabled && Boolean(token),
     queryFn: () => rbacService.listRoles(requireToken(token)),
-  });
-}
-
-export function useRoleQuery(roleId: number | null, enabled = true) {
-  const { token } = useAdminSession();
-
-  return useQuery({
-    queryKey: roleId ? rbacKeys.role(roleId) : ['admin', 'roles', 'none'],
-    enabled: enabled && Boolean(token) && roleId !== null,
-    queryFn: () => rbacService.getRole(requireToken(token), roleId!),
   });
 }
 
@@ -120,13 +110,13 @@ export function useSyncRolePermissionsMutation() {
   });
 }
 
-export function useAssignUserRoleMutation() {
+export function useSyncUserRolesMutation() {
   const { token } = useAdminSession();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ userId, payload }: { userId: number; payload: AssignUserRolePayload }) =>
-      rbacService.assignUserRole(requireToken(token), userId, payload),
+    mutationFn: ({ userId, payload }: { userId: number; payload: SyncUserRolesPayload }) =>
+      rbacService.syncUserRoles(requireToken(token), userId, payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },

@@ -4,76 +4,44 @@ Root: `admin/`
 
 ```text
 admin/
-├── docs/                          # This documentation
-├── public/                        # Static assets (logo, favicon)
+├── docs/
+├── public/
 ├── src/
-│   ├── app/                       # App shell: providers, router, route guards
-│   │   ├── providers.tsx          # MUI + TanStack Query + session provider
-│   │   ├── router.tsx             # createBrowserRouter
-│   │   └── routes/                # LoginRoute, ProtectedRoute, placeholders
+│   ├── app/                 # providers, router, route guards, ComingSoonPage
 │   ├── components/
-│   │   ├── common/                # Reusable UI (AppTable, AppModal, …)
-│   │   └── layout/                # AdminLayout, Sidebar, Navbar, PageHeader
-│   ├── config/
-│   │   ├── env.ts                 # VITE_* (apiBaseUrl)
-│   │   └── navigation.ts          # Sidebar menu + paths
-│   ├── features/                  # Feature modules (domain UI)
-│   │   └── auth/                  # Example feature
-│   │       ├── hooks/
-│   │       ├── pages/
-│   │       ├── services/
-│   │       └── types/
-│   ├── infra/
-│   │   └── http/
-│   │       └── apiClient.ts       # fetch wrapper → /api/admin
-│   ├── theme/                     # MUI theme + palette + Tailwind tokens
-│   ├── styles/                    # Global CSS (if any)
-│   ├── assets/
-│   ├── hooks/                     # App-wide hooks (non-feature)
-│   ├── types/                     # Shared TS types (non-feature)
+│   │   ├── common/          # AppTable, AppModal, AppButton, SessionLoadingScreen, …
+│   │   └── layout/          # AdminLayout, Sidebar, Navbar, PageHeader
+│   ├── config/              # env, navigation
+│   ├── features/
+│   │   ├── auth/            # login + session
+│   │   └── rbac/            # users, roles, permissions pages
+│   ├── infra/http/          # apiClient + getApiErrorMessage
+│   ├── styles/
+│   ├── theme/
 │   ├── App.tsx
 │   └── main.tsx
 ├── .env / .env.example
-├── package.json
-└── vite.config.ts
+└── package.json
 ```
 
-## What goes where
-
-| Concern | Location |
-|---------|----------|
-| New screen / domain | `src/features/{name}/` |
-| Shared button/table/modal | `src/components/common/` |
-| Shell layout / sidebar | `src/components/layout/` |
-| Menu item | `src/config/navigation.ts` |
-| Route registration | `src/app/router.tsx` (+ real page element) |
-| HTTP to Laravel | `src/infra/http/apiClient.ts` (+ feature `services/`) |
-| Env / API host | `src/config/env.ts` + `.env` |
-| Theme | `src/theme/` |
-
-## Feature module layout (required for new features)
+## Feature module layout
 
 ```text
 src/features/{feature}/
-├── types/           # API-aligned TypeScript types
-├── services/        # Thin apiRequest wrappers (no React)
-├── hooks/           # useQuery / useMutation / local UI hooks
-├── pages/           # Route-level pages
-└── components/      # Feature-only UI (optional)
+├── types/
+├── services/      # apiRequest wrappers
+├── hooks/         # TanStack Query
+├── pages/
+└── components/    # feature-only UI (optional)
 ```
 
-Examples of upcoming features: `rbac` (roles/users), `employees`, `payroll`.
+## Routes (current)
 
-## Do not put
-
-| Avoid | Prefer |
-|-------|--------|
-| API calls inside page JSX | `services/` + TanStack hooks |
-| Feature UI in `components/common` | `features/{x}/components/` |
-| Supabase / random BaaS clients | `infra/http/apiClient` only |
-| Hardcoded API host in features | `env.apiBaseUrl` / `adminApiBaseUrl` |
-| Social modules (posts, comments) | HR Admin menus only |
-
-## Path alias
-
-`@/` → `src/` (Vite/TS config).
+| Path | Page |
+|------|------|
+| `/login` | Login |
+| `/dashboard` | Coming soon |
+| `/users` | RBAC users |
+| `/roles` | RBAC roles |
+| `/permissions` | RBAC permissions |
+| `/settings` | Coming soon |

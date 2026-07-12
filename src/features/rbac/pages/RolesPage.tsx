@@ -27,7 +27,6 @@ import {
   RoleActiveChip,
   RoleSummary,
   RbacQueryError,
-  getRbacErrorMessage,
 } from '../components/RbacShared';
 import {
   useCreateRoleMutation,
@@ -37,6 +36,7 @@ import {
   useSyncRolePermissionsMutation,
   useUpdateRoleMutation,
 } from '../hooks/useRbacQueries';
+import { getApiErrorMessage } from '@/infra/http/getApiErrorMessage';
 
 type RoleFormState = {
   name: string;
@@ -140,7 +140,7 @@ export function RolesPage() {
       }
       setFormOpen(false);
     } catch (error) {
-      setFormError(getRbacErrorMessage(error));
+      setFormError(getApiErrorMessage(error));
     }
   };
 
@@ -152,7 +152,7 @@ export function RolesPage() {
     try {
       await deleteRole.mutateAsync(role.id);
     } catch (error) {
-      window.alert(getRbacErrorMessage(error));
+      window.alert(getApiErrorMessage(error));
     }
   };
 
@@ -169,7 +169,7 @@ export function RolesPage() {
       });
       setPermissionsRole(null);
     } catch (error) {
-      setPermissionsError(getRbacErrorMessage(error));
+      setPermissionsError(getApiErrorMessage(error));
     }
   };
 

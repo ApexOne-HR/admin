@@ -22,8 +22,8 @@ export type SyncRolePermissionsPayload = {
   permission_ids: number[];
 };
 
-export type AssignUserRolePayload = {
-  role_id: number;
+export type SyncUserRolesPayload = {
+  role_ids: number[];
 };
 
 export type PaginatedMeta = {

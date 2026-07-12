@@ -1,9 +1,10 @@
 import {
   Button,
-  MenuItem,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
   Pagination,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
@@ -14,15 +15,15 @@ import { PageHeader } from '@/components/layout/PageHeader/PageHeader';
 import type { AdminUser } from '@/features/auth/types/auth.type';
 import { can } from '@/features/auth/services/auth.service';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
+import { getApiErrorMessage } from '@/infra/http/getApiErrorMessage';
 import {
   ForbiddenAlert,
   PermissionGate,
   RbacQueryError,
-  getRbacErrorMessage,
 } from '../components/RbacShared';
 import {
-  useAssignUserRoleMutation,
   useRolesQuery,
+  useSyncUserRolesMutation,
   useUsersQuery,
 } from '../hooks/useRbacQueries';
 
@@ -34,10 +35,10 @@ export function UsersPage() {
 
   const usersQuery = useUsersQuery(page, perPage, canView);
   const rolesQuery = useRolesQuery(can(session?.user, 'roles.view'));
-  const assignRole = useAssignUserRoleMutation();
+  const syncRoles = useSyncUserRolesMutation();
 
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [roleId, setRoleId] = useState<number | ''>('');
+  const [roleIds, setRoleIds] = useState<number[]>([]);
   const [assignError, setAssignError] = useState<string | null>(null);
 
   const lastPage = useMemo(() => {
@@ -56,24 +57,32 @@ export function UsersPage() {
 
   const openAssign = (user: AdminUser) => {
     setSelectedUser(user);
-    setRoleId(user.role?.id ?? '');
+    setRoleIds((user.roles ?? []).map((role) => role.id));
     setAssignError(null);
   };
 
-  const handleAssign = async () => {
-    if (!selectedUser || roleId === '') {
+  const toggleRole = (roleId: number) => {
+    setRoleIds((current) =>
+      current.includes(roleId)
+        ? current.filter((id) => id !== roleId)
+        : [...current, roleId],
+    );
+  };
+
+  const handleSync = async () => {
+    if (!selectedUser) {
       return;
     }
 
     setAssignError(null);
     try {
-      await assignRole.mutateAsync({
+      await syncRoles.mutateAsync({
         userId: selectedUser.id,
-        payload: { role_id: Number(roleId) },
+        payload: { role_ids: roleIds },
       });
       setSelectedUser(null);
     } catch (error) {
-      setAssignError(getRbacErrorMessage(error));
+      setAssignError(getApiErrorMessage(error));
     }
   };
 
@@ -93,11 +102,13 @@ export function UsersPage() {
       ),
     },
     {
-      key: 'role',
-      header: 'Role',
+      key: 'roles',
+      header: 'Roles',
       render: (row) => (
         <Typography variant="body2" color="text.secondary">
-          {row.role?.name ?? 'No role'}
+          {(row.roles ?? []).length
+            ? (row.roles ?? []).map((role) => role.name).join(', ')
+            : 'No roles'}
         </Typography>
       ),
     },
@@ -108,7 +119,7 @@ export function UsersPage() {
       render: (row) => (
         <PermissionGate permission="users.assign_role">
           <Button size="small" onClick={() => openAssign(row)}>
-            Assign role
+            Assign roles
           </Button>
         </PermissionGate>
       ),
@@ -143,15 +154,15 @@ export function UsersPage() {
       <AppModal
         open={selectedUser !== null}
         onClose={() => setSelectedUser(null)}
-        title="Assign role"
+        title="Assign roles"
         description={selectedUser ? `${selectedUser.name} (${selectedUser.email})` : undefined}
         actions={
           <>
             <Button onClick={() => setSelectedUser(null)}>Cancel</Button>
             <Button
               variant="contained"
-              disabled={assignRole.isPending || roleId === ''}
-              onClick={() => void handleAssign()}
+              disabled={syncRoles.isPending}
+              onClick={() => void handleSync()}
             >
               Save
             </Button>
@@ -164,19 +175,25 @@ export function UsersPage() {
               {assignError}
             </Typography>
           ) : null}
-          <TextField
-            select
-            label="Role"
-            value={roleId}
-            onChange={(event) => setRoleId(event.target.value === '' ? '' : Number(event.target.value))}
-            fullWidth
-          >
+          <FormGroup>
             {(rolesQuery.data ?? []).map((role) => (
-              <MenuItem key={role.id} value={role.id}>
-                {role.name}
-              </MenuItem>
+              <FormControlLabel
+                key={role.id}
+                control={
+                  <Checkbox
+                    checked={roleIds.includes(role.id)}
+                    onChange={() => toggleRole(role.id)}
+                  />
+                }
+                label={`${role.name}${role.is_active ? '' : ' (inactive)'}`}
+              />
             ))}
-          </TextField>
+          </FormGroup>
+          {(rolesQuery.data ?? []).length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No roles available.
+            </Typography>
+          ) : null}
         </Stack>
       </AppModal>
     </Stack>

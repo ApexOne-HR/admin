@@ -86,18 +86,6 @@ export function AdminSessionProvider({ children }: AdminSessionProviderProps) {
     });
   }, [state.session?.accessToken]);
 
-  const refreshUser = useCallback(async () => {
-    const token = state.session?.accessToken;
-    if (!token) {
-      return;
-    }
-
-    const user = await fetchCurrentUser(token);
-    const session: AdminSession = { accessToken: token, user };
-    saveStoredAdminSession(session);
-    setState({ session, status: 'authenticated' });
-  }, [state.session?.accessToken]);
-
   const value = useMemo<AdminSessionContextValue>(
     () => ({
       session: state.session,
@@ -106,9 +94,8 @@ export function AdminSessionProvider({ children }: AdminSessionProviderProps) {
       token: state.session?.accessToken ?? null,
       login,
       logout,
-      refreshUser,
     }),
-    [login, logout, refreshUser, state.session, state.status],
+    [login, logout, state.session, state.status],
   );
 
   return <AdminSessionContext.Provider value={value}>{children}</AdminSessionContext.Provider>;

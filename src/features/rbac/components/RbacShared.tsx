@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { ErrorState } from '@/components/common/ErrorState';
 import { can } from '@/features/auth/services/auth.service';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
-import { ApiError } from '@/infra/http/apiClient';
+import { getApiErrorMessage } from '@/infra/http/getApiErrorMessage';
 
 type PermissionGateProps = {
   permission: string | string[];
@@ -23,26 +23,8 @@ export function PermissionGate({ permission, children, fallback = null }: Permis
   return <>{children}</>;
 }
 
-export function getRbacErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 422 && error.body?.errors) {
-      const first = Object.values(error.body.errors)[0];
-      if (first?.[0]) {
-        return first[0];
-      }
-    }
-    return error.message;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return 'Something went wrong';
-}
-
 export function RbacQueryError({ error }: { error: unknown }) {
-  return <ErrorState title="Unable to load data" message={getRbacErrorMessage(error)} />;
+  return <ErrorState title="Unable to load data" message={getApiErrorMessage(error)} />;
 }
 
 export function RoleActiveChip({ active }: { active: boolean }) {

@@ -1,13 +1,21 @@
 import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import { useState, type FormEvent } from 'react';
-import { env } from '@/config/env';
-import { getAuthErrorMessage } from '../services/auth.service';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { getApiErrorMessage } from '@/infra/http/getApiErrorMessage';
 import { useAdminSession } from '../hooks/useAdminSession';
+
+type LoginLocationState = {
+  from?: string;
+};
 
 export function LoginPage() {
   const { login } = useAdminSession();
-  const [email, setEmail] = useState(env.demoAdminEmail);
-  const [password, setPassword] = useState(env.demoAdminPassword);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as LoginLocationState | null)?.from ?? '/dashboard';
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -18,8 +26,9 @@ export function LoginPage() {
 
     try {
       await login({ email, password });
+      void navigate(from, { replace: true });
     } catch (err) {
-      setError(getAuthErrorMessage(err));
+      setError(getApiErrorMessage(err, 'Unable to sign in'));
     } finally {
       setIsSubmitting(false);
     }

@@ -1,7 +1,7 @@
 import { apiRequest } from '@/infra/http/apiClient';
 import type { AdminUser, Permission, Role } from '@/features/auth/types/auth.type';
 import type {
-  AssignUserRolePayload,
+  SyncUserRolesPayload,
   CreateRolePayload,
   PaginatedMeta,
   SyncRolePermissionsPayload,
@@ -10,11 +10,6 @@ import type {
 
 export async function listRoles(token: string) {
   const response = await apiRequest<Role[]>('/roles', { token });
-  return response.data;
-}
-
-export async function getRole(token: string, roleId: number) {
-  const response = await apiRequest<Role>(`/roles/${roleId}`, { token });
   return response.data;
 }
 
@@ -76,12 +71,12 @@ export async function listUsers(token: string, page = 1, perPage = 15) {
   };
 }
 
-export async function assignUserRole(
+export async function syncUserRoles(
   token: string,
   userId: number,
-  payload: AssignUserRolePayload,
+  payload: SyncUserRolesPayload,
 ) {
-  const response = await apiRequest<AdminUser>(`/users/${userId}/role`, {
+  const response = await apiRequest<AdminUser>(`/users/${userId}/roles`, {
     method: 'PUT',
     token,
     body: payload,
