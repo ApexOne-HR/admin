@@ -1,0 +1,78 @@
+import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
+import { useState, type FormEvent } from 'react';
+import { env } from '@/config/env';
+import { getAuthErrorMessage } from '../services/auth.service';
+import { useAdminSession } from '../hooks/useAdminSession';
+
+export function LoginPage() {
+  const { login } = useAdminSession();
+  const [email, setEmail] = useState(env.demoAdminEmail);
+  const [password, setPassword] = useState(env.demoAdminPassword);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await login({ email, password });
+    } catch (err) {
+      setError(getAuthErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Box
+      component="main"
+      className="grid min-h-svh place-items-center bg-surface-background px-4 py-8 sm:px-6"
+    >
+      <section className="w-full max-w-md">
+        <Stack spacing={2.5} sx={{ mb: 3.5, alignItems: 'center', textAlign: 'center' }}>
+          <img src="/logo.png" alt="ApexOne" className="block h-20 w-20 object-contain" />
+          <Stack spacing={0.75}>
+            <Typography variant="h1">ApexOne HR Admin</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Sign in with your Admin API account.
+            </Typography>
+          </Stack>
+        </Stack>
+
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 sm:p-8">
+            <Stack spacing={3}>
+              {error ? <Alert severity="error">{error}</Alert> : null}
+
+              <Stack component="form" spacing={2.5} onSubmit={handleSubmit}>
+                <TextField
+                  label="Email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  type="email"
+                  autoComplete="email"
+                  required
+                  fullWidth
+                />
+                <TextField
+                  label="Password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  fullWidth
+                />
+                <Button type="submit" variant="contained" size="large" disabled={isSubmitting} fullWidth>
+                  {isSubmitting ? 'Signing in...' : 'Sign in'}
+                </Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      </section>
+    </Box>
+  );
+}
