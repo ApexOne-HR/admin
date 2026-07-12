@@ -57,7 +57,7 @@ export function AdminSessionProvider({ children }: AdminSessionProviderProps) {
           setState({ session: null, status: 'unauthenticated' });
         }
 
-        if (!(error instanceof ApiError && error.status === 401)) {
+        if (!(error instanceof ApiError && (error.status === 401 || error.status === 403))) {
           console.error(error);
         }
       }
