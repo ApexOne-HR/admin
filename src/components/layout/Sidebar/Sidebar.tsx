@@ -1,6 +1,7 @@
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
+import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
@@ -26,6 +27,7 @@ const navigationIcons: Record<NavigationItemId, typeof DashboardRoundedIcon> = {
   dashboard: DashboardRoundedIcon,
   organization: AccountTreeRoundedIcon,
   masters: TuneRoundedIcon,
+  leave: EventAvailableRoundedIcon,
   users: PeopleRoundedIcon,
   rbac: AdminPanelSettingsRoundedIcon,
   roles: SecurityRoundedIcon,

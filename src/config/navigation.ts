@@ -2,6 +2,7 @@ export type NavigationItemId =
   | 'dashboard'
   | 'organization'
   | 'masters'
+  | 'leave'
   | 'users'
   | 'roles'
   | 'permissions'
@@ -36,11 +37,18 @@ export const adminNavigation: NavigationEntry[] = [
     path: '/dashboard',
     description: 'Overview of HR operations and admin activity.',
   },
+    {
+    id: 'users',
+    label: 'Users',
+    path: '/users',
+    description: 'Assign roles and data scopes to users.',
+    permission: 'users.view',
+  },
   {
-    id: 'organization',
-    label: 'Organization',
-    path: '/organization',
-    description: 'Companies, divisions, departments, and designations.',
+    id: 'leave',
+    label: 'Leave',
+    path: '/leave',
+    description: 'Leave types and packages.',
     permission: 'organizations.view',
   },
   {
@@ -50,12 +58,12 @@ export const adminNavigation: NavigationEntry[] = [
     description: 'Locations, work schedules, and policies.',
     permission: 'organizations.view',
   },
-  {
-    id: 'users',
-    label: 'Users',
-    path: '/users',
-    description: 'Assign roles and data scopes to users.',
-    permission: 'users.view',
+    {
+    id: 'organization',
+    label: 'Organization',
+    path: '/organization',
+    description: 'Companies, divisions, departments, and designations.',
+    permission: 'organizations.view',
   },
   {
     id: 'rbac',

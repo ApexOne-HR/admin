@@ -41,6 +41,7 @@ import {
   usePoliciesQuery,
   useWorkSchedulesQuery,
 } from '@/features/masters/hooks/useMastersQueries';
+import { useLeavePackagesQuery } from '@/features/leave/hooks/useLeaveQueries';
 import {
   useCompaniesQuery,
   useCreateCompanyMutation,
@@ -82,6 +83,7 @@ type UnitForm = {
   default_policy_id: number | '';
   default_work_schedule_id: number | '';
   default_location_id: number | '';
+  default_leave_package_id: number | '';
 };
 
 const emptyForm: UnitForm = {
@@ -102,6 +104,7 @@ const emptyForm: UnitForm = {
   default_policy_id: '',
   default_work_schedule_id: '',
   default_location_id: '',
+  default_leave_package_id: '',
 };
 
 function optionalId(value: number | ''): number | null {
@@ -139,6 +142,7 @@ export function OrganizationPage() {
   const locationsQuery = useLocationsQuery(mastersCompanyId, loadMasters);
   const schedulesQuery = useWorkSchedulesQuery(mastersCompanyId, loadMasters);
   const policiesQuery = usePoliciesQuery(mastersCompanyId, loadMasters);
+  const leavePackagesQuery = useLeavePackagesQuery(mastersCompanyId, loadMasters);
 
   const createCompany = useCreateCompanyMutation();
   const updateCompany = useUpdateCompanyMutation();
@@ -188,6 +192,7 @@ export function OrganizationPage() {
   const locations = locationsQuery.data ?? [];
   const schedules = schedulesQuery.data ?? [];
   const policies = policiesQuery.data ?? [];
+  const leavePackages = leavePackagesQuery.data ?? [];
 
   const formDivisions = form.company_id
     ? divisions.filter((row) => row.company_id === form.company_id)
@@ -222,6 +227,7 @@ export function OrganizationPage() {
       default_policy_id: row.default_policy_id ?? '',
       default_work_schedule_id: row.default_work_schedule_id ?? '',
       default_location_id: row.default_location_id ?? '',
+      default_leave_package_id: row.default_leave_package_id ?? '',
       is_active: row.is_active,
     });
     setFormError(null);
@@ -239,6 +245,7 @@ export function OrganizationPage() {
       default_policy_id: row.default_policy_id ?? '',
       default_work_schedule_id: row.default_work_schedule_id ?? '',
       default_location_id: row.default_location_id ?? '',
+      default_leave_package_id: row.default_leave_package_id ?? '',
       is_active: row.is_active,
     });
     setFormError(null);
@@ -315,6 +322,7 @@ export function OrganizationPage() {
           default_policy_id: editingId ? optionalId(form.default_policy_id) : null,
           default_work_schedule_id: editingId ? optionalId(form.default_work_schedule_id) : null,
           default_location_id: editingId ? optionalId(form.default_location_id) : null,
+          default_leave_package_id: editingId ? optionalId(form.default_leave_package_id) : null,
           is_active: form.is_active,
         };
         if (editingId) {
@@ -332,6 +340,7 @@ export function OrganizationPage() {
           default_policy_id: optionalId(form.default_policy_id),
           default_work_schedule_id: optionalId(form.default_work_schedule_id),
           default_location_id: optionalId(form.default_location_id),
+          default_leave_package_id: optionalId(form.default_leave_package_id),
           is_active: form.is_active,
         };
         if (editingId) {
@@ -627,7 +636,7 @@ export function OrganizationPage() {
         title={editingId ? `Edit ${tabTitle}` : `Add ${tabTitle}`}
         description={
           showDefaults
-            ? 'Defaults fall back Employee → Division → Company. Leave package comes after F5.'
+            ? 'Defaults fall back Employee → Division → Company.'
             : undefined
         }
         actions={
@@ -668,6 +677,7 @@ export function OrganizationPage() {
                     default_policy_id: '',
                     default_work_schedule_id: '',
                     default_location_id: '',
+                    default_leave_package_id: '',
                   }));
                 }}
                 required={tab !== 'departments'}
@@ -868,14 +878,14 @@ export function OrganizationPage() {
                   color="text.secondary"
                   sx={{ gridColumn: { md: '1 / -1' }, pt: 1 }}
                 >
-                  Defaults (location · schedule · policy)
+                  Defaults (location · schedule · policy · leave package)
                 </Typography>
 
                 {!defaultsReady ? (
                   <Typography variant="body2" color="text.secondary" sx={{ gridColumn: { md: '1 / -1' } }}>
                     {tab === 'companies'
-                      ? 'Save the company first, create masters under Masters, then edit to assign defaults.'
-                      : 'Select a company to load its locations, schedules, and policies.'}
+                      ? 'Save the company first, create masters / leave packages, then edit to assign defaults.'
+                      : 'Select a company to load its masters and leave packages.'}
                   </Typography>
                 ) : (
                   <>
@@ -933,12 +943,32 @@ export function OrganizationPage() {
                         }))
                       }
                       fullWidth
-                      sx={{ gridColumn: { md: '1 / -1' } }}
                     >
                       <MenuItem value="">None</MenuItem>
                       {policies.map((row) => (
                         <MenuItem key={row.id} value={row.id}>
                           {masterLabel(row.name, row.code)}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    <TextField
+                      select
+                      label="Default leave package"
+                      value={form.default_leave_package_id}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          default_leave_package_id:
+                            event.target.value === '' ? '' : Number(event.target.value),
+                        }))
+                      }
+                      fullWidth
+                    >
+                      <MenuItem value="">None</MenuItem>
+                      {leavePackages.map((row) => (
+                        <MenuItem key={row.id} value={row.id}>
+                          {row.name}
                         </MenuItem>
                       ))}
                     </TextField>
