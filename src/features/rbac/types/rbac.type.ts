@@ -26,6 +26,13 @@ export type SyncUserRolesPayload = {
   role_ids: number[];
 };
 
+export type SyncUserOrganizationScopesPayload = {
+  scopes: Array<{
+    company_id: number;
+    division_id?: number | null;
+  }>;
+};
+
 export type PaginatedMeta = {
   current_page: number;
   last_page: number;

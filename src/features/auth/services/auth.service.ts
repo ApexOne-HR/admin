@@ -90,3 +90,18 @@ export function can(user: AdminUser | null | undefined, permission: string): boo
     (role) => role.is_active && role.permissions?.some((item) => item.slug === permission),
   );
 }
+
+/** Global org/employee data access (Phase 3). */
+export function isGlobalScope(user: AdminUser | null | undefined): boolean {
+  if (!user) {
+    return false;
+  }
+
+  if (user.data_scope?.is_global) {
+    return true;
+  }
+
+  return (
+    can(user, 'employees.view_all_companies') || can(user, 'organizations.view_all')
+  );
+}

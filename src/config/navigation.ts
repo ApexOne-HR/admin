@@ -1,10 +1,12 @@
 export type NavigationItemId =
   | 'dashboard'
   | 'organization'
+  | 'masters'
   | 'users'
   | 'roles'
   | 'permissions'
-  | 'settings';
+  | 'settings'
+  | 'rbac';
 
 export type NavigationItem = {
   id: NavigationItemId;
@@ -15,7 +17,19 @@ export type NavigationItem = {
   permission?: string;
 };
 
-export const adminNavigation: NavigationItem[] = [
+export type NavigationGroup = {
+  id: NavigationItemId;
+  label: string;
+  children: NavigationItem[];
+};
+
+export type NavigationEntry = NavigationItem | NavigationGroup;
+
+export function isNavigationGroup(entry: NavigationEntry): entry is NavigationGroup {
+  return 'children' in entry;
+}
+
+export const adminNavigation: NavigationEntry[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -30,25 +44,38 @@ export const adminNavigation: NavigationItem[] = [
     permission: 'organizations.view',
   },
   {
+    id: 'masters',
+    label: 'Masters',
+    path: '/masters',
+    description: 'Locations, work schedules, and policies.',
+    permission: 'organizations.view',
+  },
+  {
     id: 'users',
     label: 'Users',
     path: '/users',
-    description: 'Assign roles to users.',
+    description: 'Assign roles and data scopes to users.',
     permission: 'users.view',
   },
   {
-    id: 'roles',
-    label: 'Roles',
-    path: '/roles',
-    description: 'Manage roles and permission sets.',
-    permission: 'roles.view',
-  },
-  {
-    id: 'permissions',
-    label: 'Permissions',
-    path: '/permissions',
-    description: 'Browse the permission catalog.',
-    permission: 'permissions.view',
+    id: 'rbac',
+    label: 'RBAC',
+    children: [
+      {
+        id: 'roles',
+        label: 'Roles',
+        path: '/roles',
+        description: 'Manage roles and permission sets.',
+        permission: 'roles.view',
+      },
+      {
+        id: 'permissions',
+        label: 'Permissions',
+        path: '/permissions',
+        description: 'Browse the permission catalog.',
+        permission: 'permissions.view',
+      },
+    ],
   },
   {
     id: 'settings',
@@ -58,13 +85,37 @@ export const adminNavigation: NavigationItem[] = [
   },
 ];
 
+function flattenNavigation(entries: NavigationEntry[]): NavigationItem[] {
+  return entries.flatMap((entry) => (isNavigationGroup(entry) ? entry.children : [entry]));
+}
+
 export function getNavigationItemByPath(pathname: string) {
-  return adminNavigation.find((item) => item.path === pathname) ?? adminNavigation[0];
+  return flattenNavigation(adminNavigation).find((item) => item.path === pathname)
+    ?? flattenNavigation(adminNavigation)[0];
 }
 
 export function filterNavigationByPermission(
-  items: NavigationItem[],
+  entries: NavigationEntry[],
   hasPermission: (slug: string) => boolean,
-): NavigationItem[] {
-  return items.filter((item) => !item.permission || hasPermission(item.permission));
+): NavigationEntry[] {
+  return entries
+    .map((entry) => {
+      if (!isNavigationGroup(entry)) {
+        if (entry.permission && !hasPermission(entry.permission)) {
+          return null;
+        }
+        return entry;
+      }
+
+      const children = entry.children.filter(
+        (child) => !child.permission || hasPermission(child.permission),
+      );
+
+      if (children.length === 0) {
+        return null;
+      }
+
+      return { ...entry, children };
+    })
+    .filter((entry): entry is NavigationEntry => entry !== null);
 }

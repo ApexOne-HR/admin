@@ -139,11 +139,36 @@ const baseTheme = createTheme({
         },
       },
     },
+    MuiFormControl: {
+      defaultProps: {
+        size: 'small',
+        margin: 'dense',
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        size: 'small',
+        margin: 'dense',
+      },
+    },
     MuiInputLabel: {
+      defaultProps: {
+        size: 'small',
+      },
       styleOverrides: {
         asterisk: {
           color: palette.danger[500],
         },
+      },
+    },
+    MuiOutlinedInput: {
+      defaultProps: {
+        size: 'small',
+      },
+    },
+    MuiSelect: {
+      defaultProps: {
+        size: 'small',
       },
     },
   },

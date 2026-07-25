@@ -22,8 +22,22 @@ export type AdminUser = {
   name: string;
   email: string;
   roles: Role[];
+  data_scope?: DataScope;
   created_at: string;
   updated_at: string;
+};
+
+export type DataScopeEntry = {
+  id?: number;
+  company_id: number;
+  division_id: number | null;
+  company?: { id: number; name: string; code: string } | null;
+  division?: { id: number; name: string; code: string } | null;
+};
+
+export type DataScope = {
+  is_global: boolean;
+  scopes: DataScopeEntry[];
 };
 
 export type AdminSession = {

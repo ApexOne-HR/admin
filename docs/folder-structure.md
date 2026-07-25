@@ -14,6 +14,7 @@ admin/
 │   ├── config/              # env, navigation
 │   ├── features/
 │   │   ├── auth/            # login + session
+│   │   ├── organization/    # companies, divisions, departments, designations
 │   │   └── rbac/            # users, roles, permissions pages
 │   ├── infra/http/          # apiClient + getApiErrorMessage
 │   ├── styles/
@@ -41,6 +42,7 @@ src/features/{feature}/
 |------|------|
 | `/login` | Login |
 | `/dashboard` | Coming soon |
+| `/organization` | Org hierarchy (companies → designations) |
 | `/users` | RBAC users |
 | `/roles` | RBAC roles |
 | `/permissions` | RBAC permissions |

@@ -2,6 +2,7 @@ import { apiRequest } from '@/infra/http/apiClient';
 import type { AdminUser, Permission, Role } from '@/features/auth/types/auth.type';
 import type {
   SyncUserRolesPayload,
+  SyncUserOrganizationScopesPayload,
   CreateRolePayload,
   PaginatedMeta,
   SyncRolePermissionsPayload,
@@ -77,6 +78,19 @@ export async function syncUserRoles(
   payload: SyncUserRolesPayload,
 ) {
   const response = await apiRequest<AdminUser>(`/users/${userId}/roles`, {
+    method: 'PUT',
+    token,
+    body: payload,
+  });
+  return response.data;
+}
+
+export async function syncUserOrganizationScopes(
+  token: string,
+  userId: number,
+  payload: SyncUserOrganizationScopesPayload,
+) {
+  const response = await apiRequest<AdminUser>(`/users/${userId}/organization-scopes`, {
     method: 'PUT',
     token,
     body: payload,

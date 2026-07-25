@@ -12,7 +12,8 @@ export const organizationKeys = {
   companies: (activeOnly?: boolean) => ['admin', 'companies', { activeOnly }] as const,
   divisions: (companyId?: number) => ['admin', 'divisions', { companyId }] as const,
   departments: (divisionId?: number) => ['admin', 'departments', { divisionId }] as const,
-  designations: (departmentId?: number) => ['admin', 'designations', { departmentId }] as const,
+  designations: (companyId?: number, departmentId?: number) =>
+    ['admin', 'designations', { companyId, departmentId }] as const,
 };
 
 function requireToken(token: string | null): string {
@@ -52,13 +53,14 @@ export function useDepartmentsQuery(divisionId?: number, enabled = true) {
   });
 }
 
-export function useDesignationsQuery(departmentId?: number, enabled = true) {
+export function useDesignationsQuery(companyId?: number, departmentId?: number, enabled = true) {
   const { token } = useAdminSession();
 
   return useQuery({
-    queryKey: organizationKeys.designations(departmentId),
+    queryKey: organizationKeys.designations(companyId, departmentId),
     enabled: enabled && Boolean(token),
-    queryFn: () => organizationService.listDesignations(requireToken(token), departmentId),
+    queryFn: () =>
+      organizationService.listDesignations(requireToken(token), companyId, departmentId),
   });
 }
 

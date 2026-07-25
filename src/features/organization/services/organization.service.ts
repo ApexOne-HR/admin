@@ -110,10 +110,16 @@ export async function deleteDepartment(token: string, id: number) {
   await apiRequest<null>(`/departments/${id}`, { method: 'DELETE', token });
 }
 
-export async function listDesignations(token: string, departmentId?: number, activeOnly?: boolean) {
+export async function listDesignations(
+  token: string,
+  companyId?: number,
+  departmentId?: number,
+  activeOnly?: boolean,
+) {
   const response = await apiRequest<Designation[]>('/designations', {
     token,
     query: {
+      company_id: companyId,
       department_id: departmentId,
       active_only: activeOnly ? 1 : undefined,
     },

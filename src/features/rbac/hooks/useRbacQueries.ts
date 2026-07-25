@@ -3,6 +3,7 @@ import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
 import * as rbacService from '../services/rbac.service';
 import type {
   SyncUserRolesPayload,
+  SyncUserOrganizationScopesPayload,
   CreateRolePayload,
   SyncRolePermissionsPayload,
   UpdateRolePayload,
@@ -117,6 +118,24 @@ export function useSyncUserRolesMutation() {
   return useMutation({
     mutationFn: ({ userId, payload }: { userId: number; payload: SyncUserRolesPayload }) =>
       rbacService.syncUserRoles(requireToken(token), userId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+}
+
+export function useSyncUserOrganizationScopesMutation() {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      payload,
+    }: {
+      userId: number;
+      payload: SyncUserOrganizationScopesPayload;
+    }) => rbacService.syncUserOrganizationScopes(requireToken(token), userId, payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
