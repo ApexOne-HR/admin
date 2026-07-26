@@ -1,5 +1,5 @@
-import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
-import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
+import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
@@ -9,6 +9,8 @@ import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
+import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
+import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
 import { Collapse, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -28,6 +30,8 @@ const navigationIcons: Record<NavigationItemId, typeof DashboardRoundedIcon> = {
   organization: AccountTreeRoundedIcon,
   masters: TuneRoundedIcon,
   leave: EventAvailableRoundedIcon,
+  fiscal: CalendarMonthRoundedIcon,
+  employees: BadgeRoundedIcon,
   users: PeopleRoundedIcon,
   rbac: AdminPanelSettingsRoundedIcon,
   roles: SecurityRoundedIcon,

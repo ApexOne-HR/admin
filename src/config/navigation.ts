@@ -3,6 +3,8 @@ export type NavigationItemId =
   | 'organization'
   | 'masters'
   | 'leave'
+  | 'fiscal'
+  | 'employees'
   | 'users'
   | 'roles'
   | 'permissions'
@@ -37,18 +39,11 @@ export const adminNavigation: NavigationEntry[] = [
     path: '/dashboard',
     description: 'Overview of HR operations and admin activity.',
   },
-    {
-    id: 'users',
-    label: 'Users',
-    path: '/users',
-    description: 'Assign roles and data scopes to users.',
-    permission: 'users.view',
-  },
   {
-    id: 'leave',
-    label: 'Leave',
-    path: '/leave',
-    description: 'Leave types and packages.',
+    id: 'organization',
+    label: 'Organization',
+    path: '/organization',
+    description: 'Companies, divisions, departments, and designations.',
     permission: 'organizations.view',
   },
   {
@@ -58,12 +53,33 @@ export const adminNavigation: NavigationEntry[] = [
     description: 'Locations, work schedules, and policies.',
     permission: 'organizations.view',
   },
-    {
-    id: 'organization',
-    label: 'Organization',
-    path: '/organization',
-    description: 'Companies, divisions, departments, and designations.',
+  {
+    id: 'leave',
+    label: 'Leave',
+    path: '/leave',
+    description: 'Leave types and packages.',
     permission: 'organizations.view',
+  },
+  {
+    id: 'fiscal',
+    label: 'Fiscal years',
+    path: '/fiscal-years',
+    description: 'Company fiscal year calendars.',
+    permission: 'organizations.view',
+  },
+  {
+    id: 'employees',
+    label: 'Employees',
+    path: '/employees',
+    description: 'Employee directory and org placement.',
+    permission: 'employees.view',
+  },
+  {
+    id: 'users',
+    label: 'Users',
+    path: '/users',
+    description: 'Assign roles and data scopes to users.',
+    permission: 'users.view',
   },
   {
     id: 'rbac',
