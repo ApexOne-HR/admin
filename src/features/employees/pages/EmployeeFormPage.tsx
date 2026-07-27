@@ -54,6 +54,10 @@ import type {
   EmploymentLevel,
   EmploymentType,
 } from '../types/employee.type';
+import {
+  EMPLOYEE_STATUS_OPTIONS,
+  employeeStatusMeta,
+} from '../utils/employeeStatus';
 
 function FormGrid({ children }: { children: ReactNode }) {
   return (
@@ -107,7 +111,9 @@ type FormState = {
   designation_id: number | '';
   report_to: number | '';
   employee_code: string;
+  sir_name: string;
   full_name: string;
+  myanmar_name: string;
   email: string;
   phone: string;
   status: EmployeeStatus;
@@ -118,20 +124,18 @@ type FormState = {
   date_of_resignation: string;
   probation_periods_months: number;
   permanent_date: string;
+  service_years: number;
   date_of_birth: string;
   is_foreigner: boolean;
   nrc_number: string;
   passport_number: string;
   ssb_number: string;
   income_tax_applicable: boolean;
-  residential_address: string;
-  override_policy: boolean;
+  current_address: string;
+  permanent_address: string;
   policy_id: number | '';
-  override_schedule: boolean;
   work_schedule_id: number | '';
-  override_location: boolean;
   work_location_id: number | '';
-  override_leave_package: boolean;
   leave_package_id: number | '';
 };
 
@@ -142,10 +146,12 @@ const emptyForm: FormState = {
   designation_id: '',
   report_to: '',
   employee_code: '',
+  sir_name: '',
   full_name: '',
+  myanmar_name: '',
   email: '',
   phone: '',
-  status: 'active',
+  status: 'offer',
   employment_type: '',
   employment_level: '',
   auto_attendance: false,
@@ -153,22 +159,44 @@ const emptyForm: FormState = {
   date_of_resignation: '',
   probation_periods_months: 3,
   permanent_date: '',
+  service_years: 0,
   date_of_birth: '',
   is_foreigner: false,
   nrc_number: '',
   passport_number: '',
   ssb_number: '',
   income_tax_applicable: true,
-  residential_address: '',
-  override_policy: false,
+  current_address: '',
+  permanent_address: '',
   policy_id: '',
-  override_schedule: false,
   work_schedule_id: '',
-  override_location: false,
   work_location_id: '',
-  override_leave_package: false,
   leave_package_id: '',
 };
+
+function orgDefaultIds(
+  division?: {
+    default_policy_id: number | null;
+    default_work_schedule_id: number | null;
+    default_location_id: number | null;
+    default_leave_package_id: number | null;
+  } | null,
+  company?: {
+    default_policy_id: number | null;
+    default_work_schedule_id: number | null;
+    default_location_id: number | null;
+    default_leave_package_id: number | null;
+  } | null,
+): Pick<FormState, 'policy_id' | 'work_schedule_id' | 'work_location_id' | 'leave_package_id'> {
+  return {
+    policy_id: division?.default_policy_id ?? company?.default_policy_id ?? '',
+    work_schedule_id:
+      division?.default_work_schedule_id ?? company?.default_work_schedule_id ?? '',
+    work_location_id: division?.default_location_id ?? company?.default_location_id ?? '',
+    leave_package_id:
+      division?.default_leave_package_id ?? company?.default_leave_package_id ?? '',
+  };
+}
 
 function employeeToForm(row: Employee): FormState {
   return {
@@ -178,7 +206,9 @@ function employeeToForm(row: Employee): FormState {
     designation_id: row.designation_id ?? '',
     report_to: row.report_to ?? '',
     employee_code: row.employee_code,
+    sir_name: row.sir_name ?? '',
     full_name: row.full_name,
+    myanmar_name: row.myanmar_name ?? '',
     email: row.email ?? '',
     phone: row.phone ?? '',
     status: row.status,
@@ -189,47 +219,20 @@ function employeeToForm(row: Employee): FormState {
     date_of_resignation: row.date_of_resignation ?? '',
     probation_periods_months: row.probation_periods_months,
     permanent_date: row.permanent_date ?? '',
+    service_years: row.service_years ?? 0,
     date_of_birth: row.date_of_birth ?? '',
     is_foreigner: row.is_foreigner,
     nrc_number: row.nrc_number ?? '',
     passport_number: row.passport_number ?? '',
     ssb_number: row.ssb_number ?? '',
     income_tax_applicable: row.income_tax_applicable,
-    residential_address: row.residential_address ?? '',
-    override_policy: row.policy_id != null,
+    current_address: row.current_address ?? '',
+    permanent_address: row.permanent_address ?? '',
     policy_id: row.policy_id ?? '',
-    override_schedule: row.work_schedule_id != null,
     work_schedule_id: row.work_schedule_id ?? '',
-    override_location: row.work_location_id != null,
     work_location_id: row.work_location_id ?? '',
-    override_leave_package: row.leave_package_id != null,
     leave_package_id: row.leave_package_id ?? '',
   };
-}
-
-function resolvePreviewName(
-  override: boolean,
-  overrideId: number | '',
-  divisionDefaultId: number | null | undefined,
-  companyDefaultId: number | null | undefined,
-  options: Array<{ id: number; name: string }>,
-): { name: string; source: string } {
-  const pick = (id: number | null | undefined, source: string) => {
-    if (!id) return null;
-    const row = options.find((o) => o.id === id);
-    return row ? { name: row.name, source } : null;
-  };
-
-  if (override) {
-    return pick(overrideId === '' ? null : Number(overrideId), 'employee')
-      ?? { name: '—', source: 'employee' };
-  }
-
-  return (
-    pick(divisionDefaultId, 'division')
-    ?? pick(companyDefaultId, 'company')
-    ?? { name: '—', source: 'none' }
-  );
 }
 
 export function EmployeeFormPage() {
@@ -294,36 +297,6 @@ export function EmployeeFormPage() {
   const packages = packagesQuery.data ?? [];
 
   const selectedCompany = companies.find((c) => c.id === formCompanyId);
-  const selectedDivision = formDivisions.find((d) => d.id === form.division_id);
-
-  const previewPolicy = resolvePreviewName(
-    form.override_policy,
-    form.policy_id,
-    selectedDivision?.default_policy_id,
-    selectedCompany?.default_policy_id,
-    policies,
-  );
-  const previewSchedule = resolvePreviewName(
-    form.override_schedule,
-    form.work_schedule_id,
-    selectedDivision?.default_work_schedule_id,
-    selectedCompany?.default_work_schedule_id,
-    schedules,
-  );
-  const previewLocation = resolvePreviewName(
-    form.override_location,
-    form.work_location_id,
-    selectedDivision?.default_location_id,
-    selectedCompany?.default_location_id,
-    locations,
-  );
-  const previewPackage = resolvePreviewName(
-    form.override_leave_package,
-    form.leave_package_id,
-    selectedDivision?.default_leave_package_id,
-    selectedCompany?.default_leave_package_id,
-    packages,
-  );
 
   const patchForm = (patch: Partial<FormState>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -341,6 +314,10 @@ export function EmployeeFormPage() {
         full_name: form.full_name,
         employment_type: form.employment_type,
         date_of_joining: form.date_of_joining,
+        policy_id: form.policy_id,
+        work_schedule_id: form.work_schedule_id,
+        work_location_id: form.work_location_id,
+        leave_package_id: form.leave_package_id,
       },
       [
         { key: 'company_id', label: 'Company' },
@@ -351,6 +328,10 @@ export function EmployeeFormPage() {
         { key: 'full_name', label: 'Full name' },
         { key: 'employment_type', label: 'Employment type' },
         { key: 'date_of_joining', label: 'Date of joining' },
+        { key: 'policy_id', label: 'Policy' },
+        { key: 'work_schedule_id', label: 'Work schedule' },
+        { key: 'work_location_id', label: 'Work location' },
+        { key: 'leave_package_id', label: 'Leave package' },
       ],
     );
     setFieldErrors(required);
@@ -365,7 +346,9 @@ export function EmployeeFormPage() {
       designation_id: Number(form.designation_id),
       report_to: form.report_to === '' ? null : Number(form.report_to),
       employee_code: form.employee_code.trim(),
+      sir_name: form.sir_name.trim() || null,
       full_name: form.full_name.trim(),
+      myanmar_name: form.myanmar_name.trim() || null,
       email: form.email.trim() || null,
       phone: form.phone.trim() || null,
       status: form.status,
@@ -382,31 +365,24 @@ export function EmployeeFormPage() {
       passport_number: form.passport_number.trim() || null,
       ssb_number: form.ssb_number.trim() || null,
       income_tax_applicable: form.income_tax_applicable,
-      residential_address: form.residential_address.trim() || null,
-      policy_id: form.override_policy && form.policy_id !== '' ? Number(form.policy_id) : null,
-      work_schedule_id:
-        form.override_schedule && form.work_schedule_id !== ''
-          ? Number(form.work_schedule_id)
-          : null,
-      work_location_id:
-        form.override_location && form.work_location_id !== ''
-          ? Number(form.work_location_id)
-          : null,
-      leave_package_id:
-        form.override_leave_package && form.leave_package_id !== ''
-          ? Number(form.leave_package_id)
-          : null,
+      current_address: form.current_address.trim() || null,
+      permanent_address: form.permanent_address.trim() || null,
+      policy_id: Number(form.policy_id),
+      work_schedule_id: Number(form.work_schedule_id),
+      work_location_id: Number(form.work_location_id),
+      leave_package_id: Number(form.leave_package_id),
     };
 
     try {
       if (editingId === null) {
         await createEmployee.mutateAsync(payload);
         toast.success('Employee created.');
+        navigate('/employees');
       } else {
         await updateEmployee.mutateAsync({ id: editingId, payload });
         toast.success('Employee updated.');
+        navigate(`/employees/${editingId}`);
       }
-      navigate('/employees');
     } catch (error) {
       setFormError(getApiErrorMessage(error));
     }
@@ -440,11 +416,11 @@ export function EmployeeFormPage() {
         action={
           <Button
             component={RouterLink}
-            to="/employees"
+            to={editingId !== null ? `/employees/${editingId}` : '/employees'}
             startIcon={<ArrowBackRoundedIcon />}
             color="inherit"
           >
-            Back to list
+            {editingId !== null ? 'Back' : 'Back to list'}
           </Button>
         }
       />
@@ -473,6 +449,15 @@ export function EmployeeFormPage() {
             </FormCell>
             <FormCell>
               <TextField
+                label="Sir name (optional)"
+                value={form.sir_name}
+                onChange={(e) => patchForm({ sir_name: e.target.value })}
+                fullWidth
+                helperText="e.g. U, Daw, Mr, Ms"
+              />
+            </FormCell>
+            <FormCell>
+              <TextField
                 label="Full name"
                 required
                 value={form.full_name}
@@ -487,6 +472,14 @@ export function EmployeeFormPage() {
             </FormCell>
             <FormCell>
               <TextField
+                label="Myanmar name (optional)"
+                value={form.myanmar_name}
+                onChange={(e) => patchForm({ myanmar_name: e.target.value })}
+                fullWidth
+              />
+            </FormCell>
+            <FormCell>
+              <TextField
                 select
                 label="Status"
                 required
@@ -494,9 +487,11 @@ export function EmployeeFormPage() {
                 onChange={(e) => patchForm({ status: e.target.value as EmployeeStatus })}
                 fullWidth
               >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="terminated">Terminated</MenuItem>
+                {EMPLOYEE_STATUS_OPTIONS.map((value) => (
+                  <MenuItem key={value} value={value}>
+                    {employeeStatusMeta(value).label}
+                  </MenuItem>
+                ))}
               </TextField>
             </FormCell>
             <FormCell>
@@ -516,6 +511,7 @@ export function EmployeeFormPage() {
               />
             </FormCell>
             <FormCell>{null}</FormCell>
+            <FormCell>{null}</FormCell>
           </FormGrid>
         </CardContent>
       </Card>
@@ -531,16 +527,15 @@ export function EmployeeFormPage() {
                 required
                 value={form.company_id}
                 onChange={(e) => {
+                  const companyId = e.target.value === '' ? '' : Number(e.target.value);
+                  const company = companies.find((c) => c.id === companyId);
                   patchForm({
-                    company_id: e.target.value === '' ? '' : Number(e.target.value),
+                    company_id: companyId,
                     division_id: '',
                     department_id: '',
                     designation_id: '',
                     report_to: '',
-                    policy_id: '',
-                    work_schedule_id: '',
-                    work_location_id: '',
-                    leave_package_id: '',
+                    ...orgDefaultIds(null, company ?? null),
                   });
                   setFieldErrors((c) => clearFieldError(c, 'company_id'));
                 }}
@@ -560,11 +555,21 @@ export function EmployeeFormPage() {
                 required
                 value={form.division_id}
                 onChange={(e) => {
+                  const divisionId = e.target.value === '' ? '' : Number(e.target.value);
+                  const division = formDivisions.find((d) => d.id === divisionId);
                   patchForm({
-                    division_id: e.target.value === '' ? '' : Number(e.target.value),
+                    division_id: divisionId,
                     department_id: '',
+                    ...orgDefaultIds(division ?? null, selectedCompany ?? null),
                   });
-                  setFieldErrors((c) => clearFieldError(c, 'division_id'));
+                  setFieldErrors((c) => {
+                    let next = clearFieldError(c, 'division_id');
+                    next = clearFieldError(next, 'policy_id');
+                    next = clearFieldError(next, 'work_schedule_id');
+                    next = clearFieldError(next, 'work_location_id');
+                    next = clearFieldError(next, 'leave_package_id');
+                    return next;
+                  });
                 }}
                 error={Boolean(fieldErrors.division_id)}
                 helperText={fieldErrors.division_id}
@@ -740,6 +745,15 @@ export function EmployeeFormPage() {
               />
             </FormCell>
             <FormCell>
+              <TextField
+                label="Service years"
+                value={form.service_years}
+                fullWidth
+                disabled
+                helperText="Computed from joining date"
+              />
+            </FormCell>
+            <FormCell>
               <FormControlLabel
                 control={
                   <Switch
@@ -750,266 +764,117 @@ export function EmployeeFormPage() {
                 label="Auto attendance"
               />
             </FormCell>
-            <FormCell>{null}</FormCell>
-            <FormCell>{null}</FormCell>
           </FormGrid>
         </CardContent>
       </Card>
 
       <Card variant="outlined">
-        <CardHeader title="Overrides" sx={cardHeaderSx} />
+        <CardHeader title="Work settings" sx={cardHeaderSx} />
         <CardContent>
-          <Stack spacing={1.5}>
-            <FormGrid>
-              <FormCell>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={form.override_policy}
-                      onChange={(e) =>
-                        patchForm({
-                          override_policy: e.target.checked,
-                          policy_id: e.target.checked ? form.policy_id : '',
-                        })
-                      }
-                    />
-                  }
-                  label="Override policy"
-                />
-              </FormCell>
-              <FormCell span={2}>
-                {form.override_policy ? (
-                  <TextField
-                    select
-                    label="Policy"
-                    value={form.policy_id}
-                    onChange={(e) =>
-                      patchForm({ policy_id: e.target.value === '' ? '' : Number(e.target.value) })
-                    }
-                    fullWidth
-                  >
-                    {policies.map((p) => (
-                      <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
-                    ))}
-                  </TextField>
-                ) : null}
-              </FormCell>
-              <FormCell>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={form.override_schedule}
-                      onChange={(e) =>
-                        patchForm({
-                          override_schedule: e.target.checked,
-                          work_schedule_id: e.target.checked ? form.work_schedule_id : '',
-                        })
-                      }
-                    />
-                  }
-                  label="Override work schedule"
-                />
-              </FormCell>
-              <FormCell span={2}>
-                {form.override_schedule ? (
-                  <TextField
-                    select
-                    label="Work schedule"
-                    value={form.work_schedule_id}
-                    onChange={(e) =>
-                      patchForm({
-                        work_schedule_id: e.target.value === '' ? '' : Number(e.target.value),
-                      })
-                    }
-                    fullWidth
-                  >
-                    {schedules.map((s) => (
-                      <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
-                    ))}
-                  </TextField>
-                ) : null}
-              </FormCell>
-              <FormCell>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={form.override_location}
-                      onChange={(e) =>
-                        patchForm({
-                          override_location: e.target.checked,
-                          work_location_id: e.target.checked ? form.work_location_id : '',
-                        })
-                      }
-                    />
-                  }
-                  label="Override work location"
-                />
-              </FormCell>
-              <FormCell span={2}>
-                {form.override_location ? (
-                  <TextField
-                    select
-                    label="Work location"
-                    value={form.work_location_id}
-                    onChange={(e) =>
-                      patchForm({
-                        work_location_id: e.target.value === '' ? '' : Number(e.target.value),
-                      })
-                    }
-                    fullWidth
-                  >
-                    {locations.map((l) => (
-                      <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
-                    ))}
-                  </TextField>
-                ) : null}
-              </FormCell>
-              <FormCell>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={form.override_leave_package}
-                      onChange={(e) =>
-                        patchForm({
-                          override_leave_package: e.target.checked,
-                          leave_package_id: e.target.checked ? form.leave_package_id : '',
-                        })
-                      }
-                    />
-                  }
-                  label="Override leave package"
-                />
-              </FormCell>
-              <FormCell span={2}>
-                {form.override_leave_package ? (
-                  <TextField
-                    select
-                    label="Leave package"
-                    value={form.leave_package_id}
-                    onChange={(e) =>
-                      patchForm({
-                        leave_package_id: e.target.value === '' ? '' : Number(e.target.value),
-                      })
-                    }
-                    fullWidth
-                  >
-                    {packages.map((p) => (
-                      <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
-                    ))}
-                  </TextField>
-                ) : null}
-              </FormCell>
-            </FormGrid>
-
-            <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, p: 1.5 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Effective defaults preview
-              </Typography>
-              <FormGrid>
-                <FormCell>
-                  <Typography variant="body2">
-                    Policy: {previewPolicy.name} ({previewPolicy.source})
-                  </Typography>
-                </FormCell>
-                <FormCell>
-                  <Typography variant="body2">
-                    Schedule: {previewSchedule.name} ({previewSchedule.source})
-                  </Typography>
-                </FormCell>
-                <FormCell>
-                  <Typography variant="body2">
-                    Location: {previewLocation.name} ({previewLocation.source})
-                  </Typography>
-                </FormCell>
-                <FormCell>
-                  <Typography variant="body2">
-                    Leave package: {previewPackage.name} ({previewPackage.source})
-                  </Typography>
-                </FormCell>
-                <FormCell>{null}</FormCell>
-                <FormCell>{null}</FormCell>
-              </FormGrid>
-            </Box>
-          </Stack>
-        </CardContent>
-      </Card>
-
-      <Card variant="outlined">
-        <CardHeader title="Demographics" sx={cardHeaderSx} />
-        <CardContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Required. Pre-filled from Division, then Company — change if needed.
+          </Typography>
           <FormGrid>
             <FormCell>
               <TextField
-                label="Date of birth"
-                type="date"
-                value={form.date_of_birth}
-                onChange={(e) => patchForm({ date_of_birth: e.target.value })}
+                select
+                label="Policy"
+                required
+                value={form.policy_id}
+                onChange={(e) => {
+                  patchForm({
+                    policy_id: e.target.value === '' ? '' : Number(e.target.value),
+                  });
+                  setFieldErrors((c) => clearFieldError(c, 'policy_id'));
+                }}
+                error={Boolean(fieldErrors.policy_id)}
+                helperText={fieldErrors.policy_id}
                 fullWidth
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
+                disabled={!formCompanyId}
+              >
+                {policies.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                ))}
+              </TextField>
             </FormCell>
             <FormCell>
               <TextField
-                label="NRC"
-                value={form.nrc_number}
-                onChange={(e) => patchForm({ nrc_number: e.target.value })}
+                select
+                label="Work schedule"
+                required
+                value={form.work_schedule_id}
+                onChange={(e) => {
+                  patchForm({
+                    work_schedule_id: e.target.value === '' ? '' : Number(e.target.value),
+                  });
+                  setFieldErrors((c) => clearFieldError(c, 'work_schedule_id'));
+                }}
+                error={Boolean(fieldErrors.work_schedule_id)}
+                helperText={fieldErrors.work_schedule_id}
                 fullWidth
-              />
+                disabled={!formCompanyId}
+              >
+                {schedules.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
+                ))}
+              </TextField>
             </FormCell>
             <FormCell>
               <TextField
-                label="Passport"
-                value={form.passport_number}
-                onChange={(e) => patchForm({ passport_number: e.target.value })}
+                select
+                label="Work location"
+                required
+                value={form.work_location_id}
+                onChange={(e) => {
+                  patchForm({
+                    work_location_id: e.target.value === '' ? '' : Number(e.target.value),
+                  });
+                  setFieldErrors((c) => clearFieldError(c, 'work_location_id'));
+                }}
+                error={Boolean(fieldErrors.work_location_id)}
+                helperText={fieldErrors.work_location_id}
                 fullWidth
-              />
+                disabled={!formCompanyId}
+              >
+                {locations.map((l) => (
+                  <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
+                ))}
+              </TextField>
             </FormCell>
             <FormCell>
               <TextField
-                label="SSB number"
-                value={form.ssb_number}
-                onChange={(e) => patchForm({ ssb_number: e.target.value })}
+                select
+                label="Leave package"
+                required
+                value={form.leave_package_id}
+                onChange={(e) => {
+                  patchForm({
+                    leave_package_id: e.target.value === '' ? '' : Number(e.target.value),
+                  });
+                  setFieldErrors((c) => clearFieldError(c, 'leave_package_id'));
+                }}
+                error={Boolean(fieldErrors.leave_package_id)}
+                helperText={fieldErrors.leave_package_id}
                 fullWidth
-              />
+                disabled={!formCompanyId}
+              >
+                {packages.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                ))}
+              </TextField>
             </FormCell>
-            <FormCell>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.is_foreigner}
-                    onChange={(e) => patchForm({ is_foreigner: e.target.checked })}
-                  />
-                }
-                label="Foreigner"
-              />
-            </FormCell>
-            <FormCell>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.income_tax_applicable}
-                    onChange={(e) => patchForm({ income_tax_applicable: e.target.checked })}
-                  />
-                }
-                label="Income tax applicable"
-              />
-            </FormCell>
-            <FormCell span={3}>
-              <TextField
-                label="Residential address (optional)"
-                value={form.residential_address}
-                onChange={(e) => patchForm({ residential_address: e.target.value })}
-                fullWidth
-                multiline
-                minRows={2}
-              />
-            </FormCell>
+            <FormCell>{null}</FormCell>
+            <FormCell>{null}</FormCell>
           </FormGrid>
         </CardContent>
       </Card>
 
       <Stack direction="row" spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
-        <Button component={RouterLink} to="/employees" disabled={isSaving}>
+        <Button
+          component={RouterLink}
+          to={editingId !== null ? `/employees/${editingId}` : '/employees'}
+          disabled={isSaving}
+        >
           Cancel
         </Button>
         <Button variant="contained" onClick={() => void handleSave()} disabled={isSaving}>

@@ -1,5 +1,15 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
+import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
+import CallOutlinedIcon from '@mui/icons-material/CallOutlined';
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
+import WorkOutlineRoundedIcon from '@mui/icons-material/WorkOutlineRounded';
 import {
   Box,
   Button,
@@ -8,10 +18,13 @@ import {
   CardHeader,
   Chip,
   Stack,
+  Tab,
+  Tabs,
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link as RouterLink, useParams, useSearchParams } from 'react-router-dom';
 import { AppLoader } from '@/components/common/AppLoader';
 import { PageHeader } from '@/components/layout/PageHeader/PageHeader';
 import { can } from '@/features/auth/services/auth.service';
@@ -21,8 +34,14 @@ import {
   PermissionGate,
   RbacQueryError,
 } from '@/features/rbac/components/RbacShared';
+import { EmployeeBanksTab } from '../components/EmployeeBanksTab';
+import { EmployeeEducationsTab } from '../components/EmployeeEducationsTab';
+import { EmployeeEmergencyContactsTab } from '../components/EmployeeEmergencyContactsTab';
+import { EmployeeLeaveAllocationsTab } from '../components/EmployeeLeaveAllocationsTab';
+import { EmployeePersonalInformationTab } from '../components/EmployeePersonalInformationTab';
 import { useEmployeeQuery } from '../hooks/useEmployeeQueries';
 import type { EffectiveDefault, EmployeeStatus } from '../types/employee.type';
+import { employeeStatusMeta } from '../utils/employeeStatus';
 
 const cardHeaderSx = {
   pb: 0,
@@ -75,7 +94,7 @@ function DetailField({ label, value }: { label: string; value: ReactNode }) {
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
         {label}
       </Typography>
-      <Typography variant="body2" sx={{ mt: 0.25, wordBreak: 'break-word' }}>
+      <Typography variant="body2" sx={{ mt: 0.25, wordBreak: 'break-word', fontWeight: 500 }}>
         {value === null || value === undefined || value === '' ? '—' : value}
       </Typography>
     </Box>
@@ -83,9 +102,26 @@ function DetailField({ label, value }: { label: string; value: ReactNode }) {
 }
 
 function statusChip(status: EmployeeStatus) {
-  const color =
-    status === 'active' ? 'success' : status === 'inactive' ? 'default' : 'error';
-  return <Chip size="small" label={status} color={color} />;
+  const meta = employeeStatusMeta(status);
+  return <Chip size="small" label={meta.label} color={meta.color} />;
+}
+
+function sectionTitle(icon: ReactNode, label: string) {
+  return (
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+      {icon}
+      <Box component="span">{label}</Box>
+    </Stack>
+  );
+}
+
+function tabLabel(icon: ReactNode, label: string) {
+  return (
+    <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+      {icon}
+      <Box component="span">{label}</Box>
+    </Stack>
+  );
 }
 
 function yesNo(value: boolean) {
@@ -106,12 +142,24 @@ function formatEffective(item: EffectiveDefault | null | undefined) {
   return `${item.name} (${item.source})`;
 }
 
+function initialDetailTab(searchParams: URLSearchParams): number {
+  const tab = searchParams.get('tab');
+  if (tab === 'personal' || tab === '1') return 1;
+  if (tab === 'banks' || tab === '2') return 2;
+  if (tab === 'emergency' || tab === '3') return 3;
+  if (tab === 'education' || tab === '4') return 4;
+  if (tab === 'leave' || tab === '5') return 5;
+  return 0;
+}
+
 export function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const employeeId = Number(id);
+  const [searchParams] = useSearchParams();
   const { session } = useAdminSession();
   const canView = can(session?.user, 'employees.view');
   const canUpdate = can(session?.user, 'employees.update');
+  const [tab, setTab] = useState(() => initialDetailTab(searchParams));
 
   const employeeQuery = useEmployeeQuery(
     Number.isFinite(employeeId) ? employeeId : undefined,
@@ -144,39 +192,97 @@ export function EmployeeDetailPage() {
         title={employee.full_name}
         description={`${employee.employee_code} · ${employee.company?.name ?? '—'}`}
         action={
-          <Stack direction="row" spacing={1}>
-            <Button
-              component={RouterLink}
-              to="/employees"
-              startIcon={<ArrowBackRoundedIcon />}
-              color="inherit"
-            >
-              Back to list
-            </Button>
+          <Button
+            component={RouterLink}
+            to="/employees"
+            startIcon={<ArrowBackRoundedIcon />}
+            color="inherit"
+          >
+            Back to list
+          </Button>
+        }
+      />
+
+      <Tabs
+        value={tab}
+        onChange={(_event, value: number) => setTab(value)}
+        variant="scrollable"
+        allowScrollButtonsMobile
+      >
+        <Tab
+          label={tabLabel(
+            <PersonOutlineOutlinedIcon fontSize="small" sx={{ color: 'primary.main' }} />,
+            'Employee Profile',
+          )}
+        />
+        <Tab
+          label={tabLabel(
+            <InfoOutlinedIcon fontSize="small" sx={{ color: 'info.main' }} />,
+            'Personal Information',
+          )}
+        />
+        <Tab
+          label={tabLabel(
+            <CreditCardOutlinedIcon fontSize="small" sx={{ color: 'secondary.main' }} />,
+            'Banks',
+          )}
+        />
+        <Tab
+          label={tabLabel(
+            <CallOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />,
+            'Emergency',
+          )}
+        />
+        <Tab
+          label={tabLabel(
+            <SchoolOutlinedIcon fontSize="small" sx={{ color: 'info.main' }} />,
+            'Education',
+          )}
+        />
+        <Tab
+          label={tabLabel(
+            <AssignmentTurnedInOutlinedIcon fontSize="small" sx={{ color: 'success.main' }} />,
+            'Leave balances',
+          )}
+        />
+      </Tabs>
+
+      {tab === 0 ? (
+        <Stack spacing={2.5}>
+      <Card variant="outlined">
+        <CardHeader
+          title={sectionTitle(
+            <BadgeOutlinedIcon fontSize="small" sx={{ color: 'primary.main' }} />,
+            'Identity',
+          )}
+          sx={cardHeaderSx}
+          action={
             <PermissionGate permission="employees.update">
               <Button
                 component={RouterLink}
                 to={`/employees/${employee.id}/edit`}
-                variant="contained"
+                size="small"
                 startIcon={<EditRoundedIcon />}
                 disabled={!canUpdate}
               >
                 Edit
               </Button>
             </PermissionGate>
-          </Stack>
-        }
-      />
-
-      <Card variant="outlined">
-        <CardHeader title="Identity" sx={cardHeaderSx} />
+          }
+        />
         <CardContent>
           <FormGrid>
             <FormCell>
               <DetailField label="Employee code" value={employee.employee_code} />
             </FormCell>
             <FormCell>
+              <DetailField label="Sir name" value={employee.sir_name} />
+            </FormCell>
+            <FormCell>
               <DetailField label="Full name" value={employee.full_name} />
+            </FormCell>
+            <FormCell>
+              <DetailField label="Myanmar name" value={employee.myanmar_name} />
             </FormCell>
             <FormCell>
               <DetailField label="Status" value={statusChip(employee.status)} />
@@ -187,15 +293,20 @@ export function EmployeeDetailPage() {
             <FormCell>
               <DetailField label="Phone" value={employee.phone} />
             </FormCell>
-            <FormCell>
-              <DetailField label="Service years" value={String(employee.service_years ?? 0)} />
-            </FormCell>
+            <FormCell>{null}</FormCell>
+            <FormCell>{null}</FormCell>
           </FormGrid>
         </CardContent>
       </Card>
 
       <Card variant="outlined">
-        <CardHeader title="Organization" sx={cardHeaderSx} />
+        <CardHeader
+          title={sectionTitle(
+            <BusinessOutlinedIcon fontSize="small" sx={{ color: 'secondary.main' }} />,
+            'Organization',
+          )}
+          sx={cardHeaderSx}
+        />
         <CardContent>
           <FormGrid>
             <FormCell>
@@ -226,7 +337,13 @@ export function EmployeeDetailPage() {
       </Card>
 
       <Card variant="outlined">
-        <CardHeader title="Employment" sx={cardHeaderSx} />
+        <CardHeader
+          title={sectionTitle(
+            <WorkOutlineRoundedIcon fontSize="small" sx={{ color: 'success.main' }} />,
+            'Employment',
+          )}
+          sx={cardHeaderSx}
+        />
         <CardContent>
           <FormGrid>
             <FormCell>
@@ -254,112 +371,78 @@ export function EmployeeDetailPage() {
               <DetailField label="Resignation date" value={employee.date_of_resignation} />
             </FormCell>
             <FormCell>
+              <DetailField label="Service years" value={String(employee.service_years ?? 0)} />
+            </FormCell>
+            <FormCell>
               <DetailField label="Auto attendance" value={yesNo(employee.auto_attendance)} />
             </FormCell>
             <FormCell>{null}</FormCell>
+          </FormGrid>
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined">
+        <CardHeader
+          title={sectionTitle(
+            <TuneOutlinedIcon fontSize="small" sx={{ color: 'warning.main' }} />,
+            'Work settings',
+          )}
+          sx={cardHeaderSx}
+        />
+        <CardContent>
+          <FormGrid>
+            <FormCell>
+              <DetailField label="Policy" value={formatEffective(defaults?.policy)} />
+            </FormCell>
+            <FormCell>
+              <DetailField
+                label="Work schedule"
+                value={formatEffective(defaults?.work_schedule)}
+              />
+            </FormCell>
+            <FormCell>
+              <DetailField
+                label="Work location"
+                value={formatEffective(defaults?.work_location)}
+              />
+            </FormCell>
+            <FormCell>
+              <DetailField
+                label="Leave package"
+                value={formatEffective(defaults?.leave_package)}
+              />
+            </FormCell>
+            <FormCell>{null}</FormCell>
             <FormCell>{null}</FormCell>
           </FormGrid>
         </CardContent>
       </Card>
+        </Stack>
+      ) : null}
 
-      <Card variant="outlined">
-        <CardHeader title="Overrides" sx={cardHeaderSx} />
-        <CardContent>
-          <Stack spacing={1.5}>
-            <FormGrid>
-              <FormCell>
-                <DetailField
-                  label="Policy override"
-                  value={employee.policy_id ? 'Yes' : 'Inherit'}
-                />
-              </FormCell>
-              <FormCell>
-                <DetailField
-                  label="Schedule override"
-                  value={employee.work_schedule_id ? 'Yes' : 'Inherit'}
-                />
-              </FormCell>
-              <FormCell>
-                <DetailField
-                  label="Location override"
-                  value={employee.work_location_id ? 'Yes' : 'Inherit'}
-                />
-              </FormCell>
-              <FormCell>
-                <DetailField
-                  label="Leave package override"
-                  value={employee.leave_package_id ? 'Yes' : 'Inherit'}
-                />
-              </FormCell>
-              <FormCell>{null}</FormCell>
-              <FormCell>{null}</FormCell>
-            </FormGrid>
+      {tab === 1 ? (
+        <EmployeePersonalInformationTab employee={employee} canEdit={canUpdate} />
+      ) : null}
 
-            <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, p: 1.5 }}>
-              <Typography variant="subtitle2" gutterBottom sx={{ fontSize: '0.875rem' }}>
-                Effective defaults
-              </Typography>
-              <FormGrid>
-                <FormCell>
-                  <DetailField label="Policy" value={formatEffective(defaults?.policy)} />
-                </FormCell>
-                <FormCell>
-                  <DetailField
-                    label="Schedule"
-                    value={formatEffective(defaults?.work_schedule)}
-                  />
-                </FormCell>
-                <FormCell>
-                  <DetailField
-                    label="Location"
-                    value={formatEffective(defaults?.work_location)}
-                  />
-                </FormCell>
-                <FormCell>
-                  <DetailField
-                    label="Leave package"
-                    value={formatEffective(defaults?.leave_package)}
-                  />
-                </FormCell>
-                <FormCell>{null}</FormCell>
-                <FormCell>{null}</FormCell>
-              </FormGrid>
-            </Box>
-          </Stack>
-        </CardContent>
-      </Card>
+      {tab === 2 ? (
+        <EmployeeBanksTab employeeId={employee.id} canEdit={canUpdate} />
+      ) : null}
 
-      <Card variant="outlined">
-        <CardHeader title="Demographics" sx={cardHeaderSx} />
-        <CardContent>
-          <FormGrid>
-            <FormCell>
-              <DetailField label="Date of birth" value={employee.date_of_birth} />
-            </FormCell>
-            <FormCell>
-              <DetailField label="NRC" value={employee.nrc_number} />
-            </FormCell>
-            <FormCell>
-              <DetailField label="Passport" value={employee.passport_number} />
-            </FormCell>
-            <FormCell>
-              <DetailField label="SSB number" value={employee.ssb_number} />
-            </FormCell>
-            <FormCell>
-              <DetailField label="Foreigner" value={yesNo(employee.is_foreigner)} />
-            </FormCell>
-            <FormCell>
-              <DetailField
-                label="Income tax applicable"
-                value={yesNo(employee.income_tax_applicable)}
-              />
-            </FormCell>
-            <FormCell span={3}>
-              <DetailField label="Residential address" value={employee.residential_address} />
-            </FormCell>
-          </FormGrid>
-        </CardContent>
-      </Card>
+      {tab === 3 ? (
+        <EmployeeEmergencyContactsTab employeeId={employee.id} canEdit={canUpdate} />
+      ) : null}
+
+      {tab === 4 ? (
+        <EmployeeEducationsTab employeeId={employee.id} canEdit={canUpdate} />
+      ) : null}
+
+      {tab === 5 ? (
+        <EmployeeLeaveAllocationsTab
+          employeeId={employee.id}
+          companyId={employee.company_id}
+          canEdit={canUpdate}
+        />
+      ) : null}
     </Stack>
   );
 }

@@ -36,11 +36,14 @@ import {
   useEmployeesQuery,
 } from '../hooks/useEmployeeQueries';
 import type { Employee, EmployeeStatus } from '../types/employee.type';
+import {
+  EMPLOYEE_STATUS_OPTIONS,
+  employeeStatusMeta,
+} from '../utils/employeeStatus';
 
 function statusChip(status: EmployeeStatus) {
-  const color =
-    status === 'active' ? 'success' : status === 'inactive' ? 'default' : 'error';
-  return <Chip size="small" label={status} color={color} />;
+  const meta = employeeStatusMeta(status);
+  return <Chip size="small" label={meta.label} color={meta.color} />;
 }
 
 export function EmployeesPage() {
@@ -260,9 +263,11 @@ export function EmployeesPage() {
           sx={{ minWidth: 140 }}
         >
           <MenuItem value="">All</MenuItem>
-          <MenuItem value="active">Active</MenuItem>
-          <MenuItem value="inactive">Inactive</MenuItem>
-          <MenuItem value="terminated">Terminated</MenuItem>
+          {EMPLOYEE_STATUS_OPTIONS.map((value) => (
+            <MenuItem key={value} value={value}>
+              {employeeStatusMeta(value).label}
+            </MenuItem>
+          ))}
         </TextField>
       </Stack>
 

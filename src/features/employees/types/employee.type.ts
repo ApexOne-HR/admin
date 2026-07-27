@@ -1,4 +1,10 @@
-export type EmployeeStatus = 'active' | 'inactive' | 'terminated';
+export type EmployeeStatus =
+  | 'offer'
+  | 'probation'
+  | 'permanent'
+  | 'terminated'
+  | 'resigned'
+  | 'dismissed';
 export type EmploymentType = 'full-time' | 'part-time' | 'contract' | 'others';
 export type EmploymentLevel = 'Junior' | 'Senior' | 'Manager' | 'Executive';
 
@@ -21,7 +27,9 @@ export type Employee = {
   work_location_id: number | null;
   leave_package_id: number | null;
   employee_code: string;
+  sir_name: string | null;
   full_name: string;
+  myanmar_name: string | null;
   email: string | null;
   phone: string | null;
   status: EmployeeStatus;
@@ -39,7 +47,8 @@ export type Employee = {
   passport_number: string | null;
   ssb_number: string | null;
   income_tax_applicable: boolean;
-  residential_address: string | null;
+  current_address: string | null;
+  permanent_address: string | null;
   company?: { id: number; name: string };
   division?: { id: number; name: string } | null;
   department?: { id: number; name: string } | null;
@@ -62,12 +71,14 @@ export type EmployeePayload = {
   department_id: number;
   designation_id: number;
   report_to?: number | null;
-  policy_id?: number | null;
-  work_schedule_id?: number | null;
-  work_location_id?: number | null;
-  leave_package_id?: number | null;
+  policy_id: number;
+  work_schedule_id: number;
+  work_location_id: number;
+  leave_package_id: number;
   employee_code: string;
+  sir_name?: string | null;
   full_name: string;
+  myanmar_name?: string | null;
   email?: string | null;
   phone?: string | null;
   status?: EmployeeStatus;
@@ -84,7 +95,8 @@ export type EmployeePayload = {
   passport_number?: string | null;
   ssb_number?: string | null;
   income_tax_applicable?: boolean;
-  residential_address?: string | null;
+  current_address?: string | null;
+  permanent_address?: string | null;
 };
 
 export type EmployeeListParams = {
