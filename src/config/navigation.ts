@@ -40,10 +40,17 @@ export const adminNavigation: NavigationEntry[] = [
     description: 'Overview of HR operations and admin activity.',
   },
   {
-    id: 'organization',
-    label: 'Organization',
-    path: '/organization',
-    description: 'Companies, divisions, departments, and designations.',
+    id: 'employees',
+    label: 'Employees',
+    path: '/employees',
+    description: 'Employee directory and org placement.',
+    permission: 'employees.view',
+  },
+  {
+    id: 'leave',
+    label: 'Leave',
+    path: '/leave',
+    description: 'Leave types and packages.',
     permission: 'organizations.view',
   },
   {
@@ -54,10 +61,10 @@ export const adminNavigation: NavigationEntry[] = [
     permission: 'organizations.view',
   },
   {
-    id: 'leave',
-    label: 'Leave',
-    path: '/leave',
-    description: 'Leave types and packages.',
+    id: 'organization',
+    label: 'Organization',
+    path: '/organization',
+    description: 'Companies, divisions, departments, and designations.',
     permission: 'organizations.view',
   },
   {
@@ -66,13 +73,6 @@ export const adminNavigation: NavigationEntry[] = [
     path: '/fiscal-years',
     description: 'Company fiscal year calendars.',
     permission: 'organizations.view',
-  },
-  {
-    id: 'employees',
-    label: 'Employees',
-    path: '/employees',
-    description: 'Employee directory and org placement.',
-    permission: 'employees.view',
   },
   {
     id: 'users',

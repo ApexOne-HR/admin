@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { AppLoader } from '@/components/common/AppLoader';
 import { useToast } from '@/components/common/feedback/ToastProvider';
@@ -44,12 +44,14 @@ import {
 } from '@/features/rbac/components/RbacShared';
 import {
   useCreateEmployeeMutation,
+  useEmployeeNrcOptionsQuery,
   useEmployeeQuery,
   useEmployeesQuery,
   useUpdateEmployeeMutation,
 } from '../hooks/useEmployeeQueries';
 import type {
   Employee,
+  NrcCitizenship,
   EmployeeStatus,
   EmploymentLevel,
   EmploymentType,
@@ -58,6 +60,12 @@ import {
   EMPLOYEE_STATUS_OPTIONS,
   employeeStatusMeta,
 } from '../utils/employeeStatus';
+import {
+  NRC_CITIZENSHIP_OPTIONS,
+  formatNrcPreview,
+  nrcTownshipsByCode,
+  parseNrcValue,
+} from '../utils/nrc';
 
 function FormGrid({ children }: { children: ReactNode }) {
   return (
@@ -127,7 +135,11 @@ type FormState = {
   service_years: number;
   date_of_birth: string;
   is_foreigner: boolean;
-  nrc_number: string;
+  nrc_code: string;
+  nrc_township_code: string;
+  nrc_township_name: string;
+  nrc_citizenship: NrcCitizenship | '';
+  nrc_number_serial: string;
   passport_number: string;
   ssb_number: string;
   income_tax_applicable: boolean;
@@ -162,7 +174,11 @@ const emptyForm: FormState = {
   service_years: 0,
   date_of_birth: '',
   is_foreigner: false,
-  nrc_number: '',
+  nrc_code: '',
+  nrc_township_code: '',
+  nrc_township_name: '',
+  nrc_citizenship: '',
+  nrc_number_serial: '',
   passport_number: '',
   ssb_number: '',
   income_tax_applicable: true,
@@ -199,6 +215,8 @@ function orgDefaultIds(
 }
 
 function employeeToForm(row: Employee): FormState {
+  const parsedNrc = parseNrcValue(row.nrc_number);
+
   return {
     company_id: row.company_id,
     division_id: row.division_id ?? '',
@@ -222,7 +240,11 @@ function employeeToForm(row: Employee): FormState {
     service_years: row.service_years ?? 0,
     date_of_birth: row.date_of_birth ?? '',
     is_foreigner: row.is_foreigner,
-    nrc_number: row.nrc_number ?? '',
+    nrc_code: parsedNrc?.code ?? '',
+    nrc_township_code: parsedNrc?.townshipCode ?? '',
+    nrc_township_name: '',
+    nrc_citizenship: parsedNrc?.citizenship ?? '',
+    nrc_number_serial: parsedNrc?.serial ?? '',
     passport_number: row.passport_number ?? '',
     ssb_number: row.ssb_number ?? '',
     income_tax_applicable: row.income_tax_applicable,
@@ -270,6 +292,7 @@ export function EmployeeFormPage() {
     { company_id: formCompanyId, per_page: 100, page: 1 },
     allowed && Boolean(formCompanyId),
   );
+  const nrcOptionsQuery = useEmployeeNrcOptionsQuery(allowed);
   const policiesQuery = usePoliciesQuery(formCompanyId, allowed && Boolean(formCompanyId));
   const schedulesQuery = useWorkSchedulesQuery(formCompanyId, allowed && Boolean(formCompanyId));
   const locationsQuery = useLocationsQuery(formCompanyId, allowed && Boolean(formCompanyId));
@@ -295,6 +318,20 @@ export function EmployeeFormPage() {
   const schedules = schedulesQuery.data ?? [];
   const locations = locationsQuery.data ?? [];
   const packages = packagesQuery.data ?? [];
+  const nrcCodeOptions = useMemo(
+    () => Array.from(new Set((nrcOptionsQuery.data ?? []).map((option) => option.code))),
+    [nrcOptionsQuery.data],
+  );
+  const townshipOptions = useMemo(
+    () => nrcTownshipsByCode(nrcOptionsQuery.data ?? [], form.nrc_code),
+    [form.nrc_code, nrcOptionsQuery.data],
+  );
+  const nrcPreview = formatNrcPreview({
+    code: form.nrc_code,
+    townshipCode: form.nrc_township_code,
+    citizenship: form.nrc_citizenship,
+    serial: form.nrc_number_serial,
+  });
 
   const selectedCompany = companies.find((c) => c.id === formCompanyId);
 
@@ -339,6 +376,28 @@ export function EmployeeFormPage() {
       return;
     }
 
+    if (!form.is_foreigner) {
+      const nrcErrors: FieldErrors = {};
+
+      if (!form.nrc_code) {
+        nrcErrors.nrc_code = 'NRC code is required.';
+      }
+      if (!form.nrc_township_code) {
+        nrcErrors.nrc_township_code = 'Township is required.';
+      }
+      if (!form.nrc_citizenship) {
+        nrcErrors.nrc_citizenship = 'Citizenship is required.';
+      }
+      if (!form.nrc_number_serial.trim()) {
+        nrcErrors.nrc_number_serial = 'NRC number is required.';
+      }
+
+      if (hasFieldErrors(nrcErrors)) {
+        setFieldErrors((current) => ({ ...current, ...nrcErrors }));
+        return;
+      }
+    }
+
     const payload = {
       company_id: Number(form.company_id),
       division_id: Number(form.division_id),
@@ -361,7 +420,7 @@ export function EmployeeFormPage() {
       permanent_date: form.permanent_date || null,
       date_of_birth: form.date_of_birth || null,
       is_foreigner: form.is_foreigner,
-      nrc_number: form.nrc_number.trim() || null,
+      nrc_number: form.is_foreigner ? null : nrcPreview || null,
       passport_number: form.passport_number.trim() || null,
       ssb_number: form.ssb_number.trim() || null,
       income_tax_applicable: form.income_tax_applicable,
@@ -762,6 +821,205 @@ export function EmployeeFormPage() {
                   />
                 }
                 label="Auto attendance"
+              />
+            </FormCell>
+          </FormGrid>
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined">
+        <CardHeader title="Personal information" sx={cardHeaderSx} />
+        <CardContent>
+          <FormGrid>
+            <FormCell>
+              <TextField
+                label="Date of birth (optional)"
+                type="date"
+                value={form.date_of_birth}
+                onChange={(e) => patchForm({ date_of_birth: e.target.value })}
+                fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </FormCell>
+            <FormCell>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.income_tax_applicable}
+                    onChange={(e) => patchForm({ income_tax_applicable: e.target.checked })}
+                  />
+                }
+                label="Income tax applicable"
+              />
+            </FormCell>
+            <FormCell>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.is_foreigner}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        patchForm({
+                          is_foreigner: true,
+                          nrc_code: '',
+                          nrc_township_code: '',
+                          nrc_township_name: '',
+                          nrc_citizenship: '',
+                          nrc_number_serial: '',
+                        });
+                        setFieldErrors((current) => {
+                          const next = { ...current };
+                          delete next.nrc_code;
+                          delete next.nrc_township_code;
+                          delete next.nrc_citizenship;
+                          delete next.nrc_number_serial;
+                          return next;
+                        });
+                        return;
+                      }
+
+                      patchForm({ is_foreigner: false });
+                    }}
+                  />
+                }
+                label="Foreigner"
+              />
+            </FormCell>
+            {!form.is_foreigner ? (
+              <>
+                <FormCell span={3}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gap: 1.5,
+                      width: { xs: '100%', md: '75%' },
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        md: '1fr 2fr 1fr 2fr',
+                      },
+                    }}
+                  >
+                    <TextField
+                      select
+                      label="NRC code"
+                      required
+                      value={form.nrc_code}
+                      onChange={(e) => {
+                        patchForm({
+                          nrc_code: e.target.value,
+                          nrc_township_code: '',
+                          nrc_township_name: '',
+                        });
+                        setFieldErrors((current) => clearFieldError(current, 'nrc_code'));
+                      }}
+                      error={Boolean(fieldErrors.nrc_code)}
+                      helperText={fieldErrors.nrc_code}
+                      fullWidth
+                      disabled={nrcOptionsQuery.isLoading}
+                    >
+                      {nrcCodeOptions.map((code) => (
+                        <MenuItem key={code} value={code}>
+                          {code}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      select
+                      label="NRC township"
+                      required
+                      value={form.nrc_township_code}
+                      onChange={(e) => {
+                        const selected = townshipOptions.find(
+                          (option) => option.township_code === e.target.value,
+                        );
+                        patchForm({
+                          nrc_township_code: e.target.value,
+                          nrc_township_name: selected?.township_name_mm ?? '',
+                        });
+                        setFieldErrors((current) => clearFieldError(current, 'nrc_township_code'));
+                      }}
+                      error={Boolean(fieldErrors.nrc_township_code)}
+                      helperText={fieldErrors.nrc_township_code}
+                      fullWidth
+                      disabled={!form.nrc_code}
+                    >
+                      {townshipOptions.map((option) => (
+                        <MenuItem key={option.id} value={option.township_code}>
+                          {option.township_code} / {option.township_name_mm}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      select
+                      label="NRC type"
+                      required
+                      value={form.nrc_citizenship}
+                      onChange={(e) => {
+                        patchForm({ nrc_citizenship: e.target.value as NrcCitizenship | '' });
+                        setFieldErrors((current) => clearFieldError(current, 'nrc_citizenship'));
+                      }}
+                      error={Boolean(fieldErrors.nrc_citizenship)}
+                      helperText={fieldErrors.nrc_citizenship}
+                      fullWidth
+                    >
+                      {NRC_CITIZENSHIP_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="NRC number"
+                      required
+                      value={form.nrc_number_serial}
+                      onChange={(e) => {
+                        patchForm({
+                          nrc_number_serial: e.target.value.replace(/\D/g, '').slice(0, 6),
+                        });
+                        setFieldErrors((current) => clearFieldError(current, 'nrc_number_serial'));
+                      }}
+                      error={Boolean(fieldErrors.nrc_number_serial)}
+                      helperText={fieldErrors.nrc_number_serial}
+                      fullWidth
+                    />
+                  </Box>
+                </FormCell>
+              </>
+            ) : null}
+            <FormCell>
+              <TextField
+                label="Passport (optional)"
+                value={form.passport_number}
+                onChange={(e) => patchForm({ passport_number: e.target.value })}
+                fullWidth
+              />
+            </FormCell>
+            <FormCell>
+              <TextField
+                label="SSB number (optional)"
+                value={form.ssb_number}
+                onChange={(e) => patchForm({ ssb_number: e.target.value })}
+                fullWidth
+              />
+            </FormCell>
+            <FormCell span={3}>
+              <TextField
+                label="Current address (optional)"
+                value={form.current_address}
+                onChange={(e) => patchForm({ current_address: e.target.value })}
+                fullWidth
+                multiline
+                minRows={2}
+              />
+            </FormCell>
+            <FormCell span={3}>
+              <TextField
+                label="Permanent address (optional)"
+                value={form.permanent_address}
+                onChange={(e) => patchForm({ permanent_address: e.target.value })}
+                fullWidth
+                multiline
+                minRows={2}
               />
             </FormCell>
           </FormGrid>

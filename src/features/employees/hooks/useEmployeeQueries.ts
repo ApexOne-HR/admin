@@ -7,6 +7,7 @@ export const employeeKeys = {
   all: ['admin', 'employees'] as const,
   list: (params: EmployeeListParams) => ['admin', 'employees', 'list', params] as const,
   detail: (id: number) => ['admin', 'employees', 'detail', id] as const,
+  nrcOptions: ['admin', 'employees', 'nrc-options'] as const,
 };
 
 function requireToken(token: string | null): string {
@@ -31,6 +32,16 @@ export function useEmployeeQuery(id: number | undefined, enabled = true) {
     queryKey: employeeKeys.detail(id ?? 0),
     enabled: enabled && Boolean(token) && Boolean(id),
     queryFn: () => employeeService.getEmployee(requireToken(token), id as number),
+  });
+}
+
+export function useEmployeeNrcOptionsQuery(enabled = true) {
+  const { token } = useAdminSession();
+  return useQuery({
+    queryKey: employeeKeys.nrcOptions,
+    enabled: enabled && Boolean(token),
+    queryFn: () => employeeService.listEmployeeNrcOptions(requireToken(token)),
+    staleTime: 1000 * 60 * 60,
   });
 }
 

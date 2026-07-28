@@ -181,7 +181,7 @@ export function EmployeeEducationsTab({ employeeId, canEdit }: Props) {
                   sx={{
                     display: 'grid',
                     gap: 1.5,
-                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr)) auto' },
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(4, minmax(0, 1fr)) auto' },
                     alignItems: 'center',
                     border: '1px solid',
                     borderColor: 'divider',
@@ -260,7 +260,7 @@ export function EmployeeEducationsTab({ employeeId, canEdit }: Props) {
                   sx={{
                     display: 'grid',
                     gap: 1.5,
-                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(4, minmax(0, 1fr))' },
                     border: '1px solid',
                     borderColor: 'divider',
                     borderRadius: 1,

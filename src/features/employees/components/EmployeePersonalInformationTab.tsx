@@ -7,16 +7,26 @@ import {
   CardContent,
   CardHeader,
   FormControlLabel,
+  MenuItem,
   Stack,
   Switch,
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useToast } from '@/components/common/feedback/ToastProvider';
 import { getApiErrorMessage } from '@/infra/http/getApiErrorMessage';
-import { useUpdateEmployeeMutation } from '../hooks/useEmployeeQueries';
-import type { Employee } from '../types/employee.type';
+import {
+  useEmployeeNrcOptionsQuery,
+  useUpdateEmployeeMutation,
+} from '../hooks/useEmployeeQueries';
+import type { Employee, NrcCitizenship } from '../types/employee.type';
+import {
+  NRC_CITIZENSHIP_OPTIONS,
+  formatNrcPreview,
+  nrcTownshipsByCode,
+  parseNrcValue,
+} from '../utils/nrc';
 
 const cardHeaderSx = {
   pb: 0,
@@ -28,7 +38,11 @@ const cardHeaderSx = {
 
 type PersonalDraft = {
   date_of_birth: string;
-  nrc_number: string;
+  nrc_code: string;
+  nrc_township_code: string;
+  nrc_township_name: string;
+  nrc_citizenship: NrcCitizenship | '';
+  nrc_number_serial: string;
   passport_number: string;
   ssb_number: string;
   is_foreigner: boolean;
@@ -38,9 +52,15 @@ type PersonalDraft = {
 };
 
 function toDraft(employee: Employee): PersonalDraft {
+  const parsedNrc = parseNrcValue(employee.nrc_number);
+
   return {
     date_of_birth: employee.date_of_birth ?? '',
-    nrc_number: employee.nrc_number ?? '',
+    nrc_code: parsedNrc?.code ?? '',
+    nrc_township_code: parsedNrc?.townshipCode ?? '',
+    nrc_township_name: '',
+    nrc_citizenship: parsedNrc?.citizenship ?? '',
+    nrc_number_serial: parsedNrc?.serial ?? '',
     passport_number: employee.passport_number ?? '',
     ssb_number: employee.ssb_number ?? '',
     is_foreigner: employee.is_foreigner,
@@ -108,6 +128,7 @@ type Props = {
 export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
   const toast = useToast();
   const updateEmployee = useUpdateEmployeeMutation();
+  const nrcOptionsQuery = useEmployeeNrcOptionsQuery();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<PersonalDraft>(() => toDraft(employee));
 
@@ -121,13 +142,28 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
     setDraft((current) => ({ ...current, ...patch }));
   };
 
+  const nrcCodeOptions = useMemo(
+    () => Array.from(new Set((nrcOptionsQuery.data ?? []).map((option) => option.code))),
+    [nrcOptionsQuery.data],
+  );
+  const townshipOptions = useMemo(
+    () => nrcTownshipsByCode(nrcOptionsQuery.data ?? [], draft.nrc_code),
+    [draft.nrc_code, nrcOptionsQuery.data],
+  );
+  const nrcPreview = formatNrcPreview({
+    code: draft.nrc_code,
+    townshipCode: draft.nrc_township_code,
+    citizenship: draft.nrc_citizenship,
+    serial: draft.nrc_number_serial,
+  });
+
   const handleSave = async () => {
     try {
       await updateEmployee.mutateAsync({
         id: employee.id,
         payload: {
           date_of_birth: draft.date_of_birth || null,
-          nrc_number: draft.nrc_number.trim() || null,
+          nrc_number: draft.is_foreigner ? null : nrcPreview || null,
           passport_number: draft.passport_number.trim() || null,
           ssb_number: draft.ssb_number.trim() || null,
           is_foreigner: draft.is_foreigner,
@@ -201,14 +237,129 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
               />
             </FormCell>
             <FormCell>
-              <TextField
-                label="NRC"
-                size="small"
-                value={draft.nrc_number}
-                onChange={(e) => patchDraft({ nrc_number: e.target.value })}
-                fullWidth
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={draft.income_tax_applicable}
+                    onChange={(e) => patchDraft({ income_tax_applicable: e.target.checked })}
+                  />
+                }
+                label="Income tax applicable"
               />
             </FormCell>
+            <FormCell>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={draft.is_foreigner}
+                    onChange={(e) =>
+                      patchDraft(
+                        e.target.checked
+                          ? {
+                              is_foreigner: true,
+                              nrc_code: '',
+                              nrc_township_code: '',
+                              nrc_township_name: '',
+                              nrc_citizenship: '',
+                              nrc_number_serial: '',
+                            }
+                          : { is_foreigner: false },
+                      )
+                    }
+                  />
+                }
+                label="Foreigner"
+              />
+            </FormCell>
+            {!draft.is_foreigner ? (
+              <>
+                <FormCell span={3}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gap: 1.5,
+                      width: { xs: '100%', md: '75%' },
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        md: '1fr 2fr 1fr 2fr',
+                      },
+                    }}
+                  >
+                    <TextField
+                      select
+                      label="NRC code"
+                      size="small"
+                      value={draft.nrc_code}
+                      onChange={(e) =>
+                        patchDraft({
+                          nrc_code: e.target.value,
+                          nrc_township_code: '',
+                          nrc_township_name: '',
+                        })
+                      }
+                      fullWidth
+                      disabled={nrcOptionsQuery.isLoading}
+                    >
+                      {nrcCodeOptions.map((code) => (
+                        <MenuItem key={code} value={code}>
+                          {code}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      select
+                      label="NRC township"
+                      size="small"
+                      value={draft.nrc_township_code}
+                      onChange={(e) => {
+                        const selected = townshipOptions.find(
+                          (option) => option.township_code === e.target.value,
+                        );
+                        patchDraft({
+                          nrc_township_code: e.target.value,
+                          nrc_township_name: selected?.township_name_mm ?? '',
+                        });
+                      }}
+                      fullWidth
+                      disabled={!draft.nrc_code}
+                    >
+                      {townshipOptions.map((option) => (
+                        <MenuItem key={option.id} value={option.township_code}>
+                          {option.township_code} / {option.township_name_mm}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      select
+                      label="NRC type"
+                      size="small"
+                      value={draft.nrc_citizenship}
+                      onChange={(e) =>
+                        patchDraft({ nrc_citizenship: e.target.value as NrcCitizenship | '' })
+                      }
+                      fullWidth
+                    >
+                      {NRC_CITIZENSHIP_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="NRC number"
+                      size="small"
+                      value={draft.nrc_number_serial}
+                      onChange={(e) =>
+                        patchDraft({
+                          nrc_number_serial: e.target.value.replace(/\D/g, '').slice(0, 6),
+                        })
+                      }
+                      fullWidth
+                    />
+                  </Box>
+                </FormCell>
+              </>
+            ) : null}
             <FormCell>
               <TextField
                 label="Passport"
@@ -225,28 +376,6 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
                 value={draft.ssb_number}
                 onChange={(e) => patchDraft({ ssb_number: e.target.value })}
                 fullWidth
-              />
-            </FormCell>
-            <FormCell>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={draft.is_foreigner}
-                    onChange={(e) => patchDraft({ is_foreigner: e.target.checked })}
-                  />
-                }
-                label="Foreigner"
-              />
-            </FormCell>
-            <FormCell>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={draft.income_tax_applicable}
-                    onChange={(e) => patchDraft({ income_tax_applicable: e.target.checked })}
-                  />
-                }
-                label="Income tax applicable"
               />
             </FormCell>
             <FormCell span={3}>
@@ -278,9 +407,6 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
               <ViewField label="Date of birth" value={employee.date_of_birth} />
             </FormCell>
             <FormCell>
-              <ViewField label="NRC" value={employee.nrc_number} />
-            </FormCell>
-            <FormCell>
               <ViewField label="Passport" value={employee.passport_number} />
             </FormCell>
             <FormCell>
@@ -294,6 +420,9 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
                 label="Income tax applicable"
                 value={employee.income_tax_applicable ? 'Yes' : 'No'}
               />
+            </FormCell>
+            <FormCell>
+              <ViewField label="NRC" value={employee.nrc_number} />
             </FormCell>
             <FormCell span={3}>
               <ViewField label="Current address" value={employee.current_address} />

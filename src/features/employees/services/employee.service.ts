@@ -2,6 +2,7 @@ import { apiRequest } from '@/infra/http/apiClient';
 import type {
   Employee,
   EmployeeListParams,
+  NrcOption,
   EmployeePayload,
   PaginatedMeta,
 } from '../types/employee.type';
@@ -28,6 +29,11 @@ export async function listEmployees(token: string, params: EmployeeListParams = 
 
 export async function getEmployee(token: string, id: number) {
   const response = await apiRequest<Employee>(`/employees/${id}`, { token });
+  return response.data;
+}
+
+export async function listEmployeeNrcOptions(token: string) {
+  const response = await apiRequest<NrcOption[]>('/employees/nrc-options', { token });
   return response.data;
 }
 

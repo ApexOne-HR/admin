@@ -14,6 +14,15 @@ export type EffectiveDefault = {
   source: 'employee' | 'division' | 'company';
 };
 
+export type NrcCitizenship = 'N' | 'E' | 'P' | 'T' | 'C';
+
+export type NrcOption = {
+  id: string;
+  code: string;
+  township_code: string;
+  township_name_mm: string;
+};
+
 export type Employee = {
   id: number;
   user_id: number | null;
