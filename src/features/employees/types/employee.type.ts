@@ -45,7 +45,7 @@ export type Employee = {
   employment_type: EmploymentType | null;
   employment_level: EmploymentLevel | null;
   auto_attendance: boolean;
-  date_of_joining: string;
+  date_of_joining: string | null;
   date_of_resignation: string | null;
   probation_periods_months: number;
   permanent_date: string | null;
@@ -92,11 +92,11 @@ export type EmployeePayload = {
   myanmar_name?: string | null;
   email?: string | null;
   phone?: string | null;
-  status?: EmployeeStatus;
+  status?: EmployeeStatus | null;
   employment_type: EmploymentType;
   employment_level?: EmploymentLevel | null;
   auto_attendance?: boolean;
-  date_of_joining: string;
+  date_of_joining?: string | null;
   date_of_resignation?: string | null;
   probation_periods_months?: number | null;
   permanent_date?: string | null;

@@ -158,6 +158,11 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
   });
 
   const handleSave = async () => {
+    if (!draft.is_foreigner && !nrcPreview) {
+      toast.error('Please complete NRC code, township, type, and number.');
+      return;
+    }
+
     try {
       await updateEmployee.mutateAsync({
         id: employee.id,
