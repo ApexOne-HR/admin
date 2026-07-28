@@ -375,9 +375,9 @@ export function EmployeeFormPage() {
 
     try {
       if (editingId === null) {
-        await createEmployee.mutateAsync(payload);
+        const created = await createEmployee.mutateAsync(payload);
         toast.success('Employee created.');
-        navigate('/employees');
+        navigate(`/employees/${created.id}`);
       } else {
         await updateEmployee.mutateAsync({ id: editingId, payload });
         toast.success('Employee updated.');

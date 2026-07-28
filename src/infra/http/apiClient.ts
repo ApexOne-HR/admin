@@ -32,6 +32,8 @@ type RequestOptions = {
   token?: string | null;
   body?: unknown;
   query?: Record<string, string | number | undefined | null>;
+  /** When true, send body as FormData (multipart) without JSON Content-Type. */
+  formData?: boolean;
 };
 
 function buildUrl(path: string, query?: RequestOptions['query']) {
@@ -54,7 +56,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     Accept: 'application/json',
   };
 
-  if (options.body !== undefined) {
+  const isFormData = options.formData === true || options.body instanceof FormData;
+
+  if (options.body !== undefined && !isFormData) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -65,7 +69,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const response = await fetch(buildUrl(path, options.query), {
     method: options.method ?? 'GET',
     headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body:
+      options.body === undefined
+        ? undefined
+        : isFormData
+          ? (options.body as FormData)
+          : JSON.stringify(options.body),
   });
 
   const text = await response.text();

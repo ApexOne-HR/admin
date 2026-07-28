@@ -1,15 +1,17 @@
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
-import CallOutlinedIcon from '@mui/icons-material/CallOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import CallOutlinedIcon from '@mui/icons-material/CallOutlined';
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import WorkOutlineRoundedIcon from '@mui/icons-material/WorkOutlineRounded';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import {
   Box,
   Button,
@@ -35,6 +37,7 @@ import {
   RbacQueryError,
 } from '@/features/rbac/components/RbacShared';
 import { EmployeeBanksTab } from '../components/EmployeeBanksTab';
+import { EmployeeDocumentsTab } from '../components/EmployeeDocumentsTab';
 import { EmployeeEducationsTab } from '../components/EmployeeEducationsTab';
 import { EmployeeEmergencyContactsTab } from '../components/EmployeeEmergencyContactsTab';
 import { EmployeeLeaveAllocationsTab } from '../components/EmployeeLeaveAllocationsTab';
@@ -115,11 +118,14 @@ function sectionTitle(icon: ReactNode, label: string) {
   );
 }
 
-function tabLabel(icon: ReactNode, label: string) {
+function tabLabel(icon: ReactNode, label: string, incomplete = false) {
   return (
     <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
       {icon}
       <Box component="span">{label}</Box>
+      {incomplete ? (
+        <ErrorOutlineRoundedIcon fontSize="small" color="warning" />
+      ) : null}
     </Stack>
   );
 }
@@ -145,10 +151,11 @@ function formatEffective(item: EffectiveDefault | null | undefined) {
 function initialDetailTab(searchParams: URLSearchParams): number {
   const tab = searchParams.get('tab');
   if (tab === 'personal' || tab === '1') return 1;
-  if (tab === 'banks' || tab === '2') return 2;
-  if (tab === 'emergency' || tab === '3') return 3;
-  if (tab === 'education' || tab === '4') return 4;
-  if (tab === 'leave' || tab === '5') return 5;
+  if (tab === 'documents' || tab === '2') return 2;
+  if (tab === 'banks' || tab === '3') return 3;
+  if (tab === 'emergency' || tab === '4') return 4;
+  if (tab === 'education' || tab === '5') return 5;
+  if (tab === 'leave' || tab === '6') return 6;
   return 0;
 }
 
@@ -185,6 +192,7 @@ export function EmployeeDetailPage() {
 
   const employee = employeeQuery.data;
   const defaults = employee.effective_defaults;
+  const missing = new Set(employee.missing_sections ?? []);
 
   return (
     <Stack spacing={2.5}>
@@ -223,26 +231,37 @@ export function EmployeeDetailPage() {
         />
         <Tab
           label={tabLabel(
+            <FolderOutlinedIcon fontSize="small" sx={{ color: 'warning.main' }} />,
+            'Documents',
+            missing.has('documents'),
+          )}
+        />
+        <Tab
+          label={tabLabel(
             <CreditCardOutlinedIcon fontSize="small" sx={{ color: 'secondary.main' }} />,
             'Banks',
+            missing.has('banks'),
           )}
         />
         <Tab
           label={tabLabel(
             <CallOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />,
             'Emergency',
+            missing.has('emergency'),
           )}
         />
         <Tab
           label={tabLabel(
             <SchoolOutlinedIcon fontSize="small" sx={{ color: 'info.main' }} />,
             'Education',
+            missing.has('education'),
           )}
         />
         <Tab
           label={tabLabel(
             <AssignmentTurnedInOutlinedIcon fontSize="small" sx={{ color: 'success.main' }} />,
             'Leave balances',
+            missing.has('leave'),
           )}
         />
       </Tabs>
@@ -425,18 +444,22 @@ export function EmployeeDetailPage() {
       ) : null}
 
       {tab === 2 ? (
-        <EmployeeBanksTab employeeId={employee.id} canEdit={canUpdate} />
+        <EmployeeDocumentsTab employeeId={employee.id} canEdit={canUpdate} />
       ) : null}
 
       {tab === 3 ? (
-        <EmployeeEmergencyContactsTab employeeId={employee.id} canEdit={canUpdate} />
+        <EmployeeBanksTab employeeId={employee.id} canEdit={canUpdate} />
       ) : null}
 
       {tab === 4 ? (
-        <EmployeeEducationsTab employeeId={employee.id} canEdit={canUpdate} />
+        <EmployeeEmergencyContactsTab employeeId={employee.id} canEdit={canUpdate} />
       ) : null}
 
       {tab === 5 ? (
+        <EmployeeEducationsTab employeeId={employee.id} canEdit={canUpdate} />
+      ) : null}
+
+      {tab === 6 ? (
         <EmployeeLeaveAllocationsTab
           employeeId={employee.id}
           companyId={employee.company_id}

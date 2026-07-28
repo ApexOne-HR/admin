@@ -54,6 +54,8 @@ export type Employee = {
   department?: { id: number; name: string } | null;
   designation?: { id: number; name: string } | null;
   manager?: { id: number; employee_code: string; full_name: string } | null;
+  profile_incomplete?: boolean;
+  missing_sections?: string[];
   effective_defaults?: {
     policy: EffectiveDefault | null;
     work_schedule: EffectiveDefault | null;

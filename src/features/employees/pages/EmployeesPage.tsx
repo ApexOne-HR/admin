@@ -1,8 +1,10 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import {
+  Box,
   Button,
   Chip,
   IconButton,
@@ -10,6 +12,7 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
@@ -40,6 +43,22 @@ import {
   EMPLOYEE_STATUS_OPTIONS,
   employeeStatusMeta,
 } from '../utils/employeeStatus';
+
+function missingSectionsLabel(sections: string[] | undefined) {
+  if (!sections || sections.length === 0) {
+    return 'Incomplete profile data';
+  }
+
+  const labels: Record<string, string> = {
+    banks: 'Banks',
+    documents: 'Documents',
+    emergency: 'Emergency',
+    education: 'Education',
+    leave: 'Leave balances',
+  };
+
+  return `Missing: ${sections.map((key) => labels[key] ?? key).join(', ')}`;
+}
 
 function statusChip(status: EmployeeStatus) {
   const meta = employeeStatusMeta(status);
@@ -85,6 +104,12 @@ export function EmployeesPage() {
     const meta = employeesQuery.data?.meta;
     return typeof meta?.last_page === 'number' ? meta.last_page : 1;
   }, [employeesQuery.data?.meta]);
+  const hasActiveFilters =
+    q !== ''
+    || filterCompanyId !== ''
+    || filterDivisionId !== ''
+    || filterStatus !== ''
+    || page !== 1;
 
   if (!canView) {
     return (
@@ -113,6 +138,12 @@ export function EmployeesPage() {
 
   const columns: AppTableColumn<Employee>[] = [
     {
+      key: 'index',
+      header: '#',
+      width: 56,
+      render: (_row, index) => (page - 1) * perPage + index + 1,
+    },
+    {
       key: 'code',
       header: 'Code',
       render: (row) => (
@@ -131,23 +162,50 @@ export function EmployeesPage() {
       key: 'name',
       header: 'Name',
       render: (row) => (
-        <Link
-          component={RouterLink}
-          to={`/employees/${row.id}`}
-          underline="hover"
-          color="inherit"
-        >
-          {row.full_name}
-        </Link>
+        <Box>
+          <Link
+            component={RouterLink}
+            to={`/employees/${row.id}`}
+            underline="hover"
+            color="inherit"
+            sx={{ display: 'block' }}
+          >
+            {row.full_name}
+          </Link>
+          <Typography variant="caption" color="text.secondary">
+            {row.myanmar_name ?? '—'}
+          </Typography>
+        </Box>
       ),
     },
-    { key: 'company', header: 'Company', render: (row) => row.company?.name ?? '—' },
-    { key: 'division', header: 'Division', render: (row) => row.division?.name ?? '—' },
-    { key: 'designation', header: 'Title', render: (row) => row.designation?.name ?? '—' },
+    {
+      key: 'company',
+      header: 'Company / Division',
+      render: (row) => (
+        <Box>
+          <Typography variant="body2">{row.company?.name ?? '—'}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {row.division?.name ?? '—'}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      key: 'designation',
+      header: 'Designation / Department',
+      render: (row) => (
+        <Box>
+          <Typography variant="body2">{row.designation?.name ?? '—'}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {row.department?.name ?? '—'}
+          </Typography>
+        </Box>
+      ),
+    },
     { key: 'status', header: 'Status', render: (row) => statusChip(row.status) },
     {
       key: 'service',
-      header: 'Years',
+      header: 'Service Years',
       render: (row) => String(row.service_years ?? 0),
     },
     {
@@ -155,7 +213,14 @@ export function EmployeesPage() {
       header: '',
       align: 'right',
       render: (row) => (
-        <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
+        <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
+          {row.profile_incomplete ? (
+            <Tooltip title={missingSectionsLabel(row.missing_sections)}>
+              <IconButton size="small" color="warning" aria-label="Incomplete profile">
+                <ErrorOutlineRoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
           <IconButton
             size="small"
             onClick={() => navigate(`/employees/${row.id}`)}
@@ -163,15 +228,6 @@ export function EmployeesPage() {
           >
             <VisibilityRoundedIcon fontSize="small" />
           </IconButton>
-          <PermissionGate permission="employees.update">
-            <IconButton
-              size="small"
-              onClick={() => navigate(`/employees/${row.id}/edit`)}
-              aria-label="Edit"
-            >
-              <EditRoundedIcon fontSize="small" />
-            </IconButton>
-          </PermissionGate>
           <PermissionGate permission="employees.deactivate">
             <IconButton
               size="small"
@@ -269,6 +325,29 @@ export function EmployeesPage() {
             </MenuItem>
           ))}
         </TextField>
+        <Tooltip title="Clear filters">
+          <span>
+            <IconButton
+              aria-label="Clear filters"
+              sx={{
+                alignSelf: { md: 'center' },
+                color: hasActiveFilters ? 'warning.main' : 'action.active',
+              }}
+              onClick={() => {
+                setQ('');
+                setFilterCompanyId('');
+                setFilterDivisionId('');
+                setFilterStatus('');
+                setPage(1);
+              }}
+              disabled={
+                !hasActiveFilters
+              }
+            >
+              <RefreshRoundedIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
       </Stack>
 
       {employeesQuery.isError ? <RbacQueryError error={employeesQuery.error} /> : null}

@@ -71,3 +71,26 @@ export type EmployeeLeaveAllocation = {
   created_at: string;
   updated_at: string;
 };
+
+export type AttachmentCategory = 'cv' | 'contract' | 'id_document' | 'other';
+
+export type EmployeeAttachment = {
+  id: number;
+  employee_id: number;
+  category: AttachmentCategory | string;
+  title: string | null;
+  original_name: string;
+  mime_type: string | null;
+  size_bytes: number;
+  is_employee_visible: boolean;
+  uploaded_by: number | null;
+  uploader?: { id: number; name: string; email: string } | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EmployeeAttachmentDownload = {
+  download_url: string;
+  expires_at: string;
+  original_name: string;
+};

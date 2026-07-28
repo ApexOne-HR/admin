@@ -1,5 +1,8 @@
 import { apiRequest } from '@/infra/http/apiClient';
 import type {
+  AttachmentCategory,
+  EmployeeAttachment,
+  EmployeeAttachmentDownload,
   EmployeeBank,
   EmployeeBankDraft,
   EmployeeEducation,
@@ -125,4 +128,65 @@ export async function updateEmployeeLeaveAllocation(
     },
   );
   return response.data;
+}
+
+export async function listEmployeeAttachments(token: string, employeeId: number) {
+  const response = await apiRequest<EmployeeAttachment[]>(
+    `/employees/${employeeId}/attachments`,
+    { token },
+  );
+  return response.data;
+}
+
+export async function uploadEmployeeAttachment(
+  token: string,
+  employeeId: number,
+  payload: {
+    category: AttachmentCategory;
+    title: string;
+    is_employee_visible?: boolean;
+    file: File;
+  },
+) {
+  const body = new FormData();
+  body.append('category', payload.category);
+  body.append('title', payload.title);
+  if (payload.is_employee_visible !== undefined) {
+    body.append('is_employee_visible', payload.is_employee_visible ? '1' : '0');
+  }
+  body.append('file', payload.file);
+
+  const response = await apiRequest<EmployeeAttachment>(
+    `/employees/${employeeId}/attachments`,
+    {
+      method: 'POST',
+      token,
+      body,
+      formData: true,
+    },
+  );
+  return response.data;
+}
+
+export async function downloadEmployeeAttachment(
+  token: string,
+  employeeId: number,
+  attachmentId: number,
+) {
+  const response = await apiRequest<EmployeeAttachmentDownload>(
+    `/employees/${employeeId}/attachments/${attachmentId}/download`,
+    { token },
+  );
+  return response.data;
+}
+
+export async function deleteEmployeeAttachment(
+  token: string,
+  employeeId: number,
+  attachmentId: number,
+) {
+  await apiRequest<null>(`/employees/${employeeId}/attachments/${attachmentId}`, {
+    method: 'DELETE',
+    token,
+  });
 }

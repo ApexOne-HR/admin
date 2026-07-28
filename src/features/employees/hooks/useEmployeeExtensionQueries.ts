@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
 import * as extensionService from '../services/employee-extension.service';
 import type {
+  AttachmentCategory,
   EmployeeBankDraft,
   EmployeeEducationDraft,
   EmployeeEmergencyContactDraft,
@@ -16,6 +17,8 @@ export const employeeExtensionKeys = {
     ['admin', 'employees', employeeId, 'educations'] as const,
   allocations: (employeeId: number, fiscalYearId?: number) =>
     ['admin', 'employees', employeeId, 'leave-allocations', { fiscalYearId }] as const,
+  attachments: (employeeId: number) =>
+    ['admin', 'employees', employeeId, 'attachments'] as const,
 };
 
 function requireToken(token: string | null): string {
@@ -67,6 +70,7 @@ export function useSyncEmployeeEmergencyContactsMutation(employeeId: number) {
       await queryClient.invalidateQueries({
         queryKey: employeeExtensionKeys.contacts(employeeId),
       });
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
     },
   });
 }
@@ -99,6 +103,7 @@ export function useSyncEmployeeEducationsMutation(employeeId: number) {
       await queryClient.invalidateQueries({
         queryKey: employeeExtensionKeys.educations(employeeId),
       });
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
     },
   });
 }
@@ -135,6 +140,7 @@ export function useSyncEmployeeLeaveAllocationsMutation(employeeId: number) {
       await queryClient.invalidateQueries({
         queryKey: ['admin', 'employees', employeeId, 'leave-allocations'],
       });
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
     },
   });
 }
@@ -160,6 +166,58 @@ export function useUpdateEmployeeLeaveAllocationMutation(employeeId: number) {
       await queryClient.invalidateQueries({
         queryKey: ['admin', 'employees', employeeId, 'leave-allocations'],
       });
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
+    },
+  });
+}
+
+export function useEmployeeAttachmentsQuery(employeeId: number, enabled = true) {
+  const { token } = useAdminSession();
+  return useQuery({
+    queryKey: employeeExtensionKeys.attachments(employeeId),
+    enabled: enabled && Boolean(token) && Boolean(employeeId),
+    queryFn: () => extensionService.listEmployeeAttachments(requireToken(token), employeeId),
+  });
+}
+
+export function useUploadEmployeeAttachmentMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      category: AttachmentCategory;
+      title: string;
+      is_employee_visible?: boolean;
+      file: File;
+    }) => extensionService.uploadEmployeeAttachment(requireToken(token), employeeId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: employeeExtensionKeys.attachments(employeeId),
+      });
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
+    },
+  });
+}
+
+export function useDownloadEmployeeAttachmentMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  return useMutation({
+    mutationFn: (attachmentId: number) =>
+      extensionService.downloadEmployeeAttachment(requireToken(token), employeeId, attachmentId),
+  });
+}
+
+export function useDeleteEmployeeAttachmentMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (attachmentId: number) =>
+      extensionService.deleteEmployeeAttachment(requireToken(token), employeeId, attachmentId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: employeeExtensionKeys.attachments(employeeId),
+      });
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
     },
   });
 }

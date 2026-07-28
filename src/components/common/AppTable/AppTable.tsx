@@ -2,6 +2,7 @@ import {
   Box,
   Card,
   CardContent,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -11,7 +12,6 @@ import {
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { AppLoader } from '@/components/common/AppLoader';
 
 export type AppTableColumn<T> = {
   key: string;
@@ -41,9 +41,42 @@ export function AppTable<T,>({
   if (isLoading) {
     return (
       <Card>
-        <CardContent>
-          <AppLoader label={loadingLabel ?? 'Loading table data...'} />
-        </CardContent>
+        <TableContainer sx={{ overflowX: 'auto' }} aria-label={loadingLabel ?? 'Loading table data'}>
+          <Table sx={{ minWidth: 720 }}>
+            <TableHead>
+              <TableRow>
+                {columns.map((column) => (
+                  <TableCell
+                    align={column.align}
+                    key={column.key}
+                    sx={{ fontWeight: 700, whiteSpace: 'nowrap', width: column.width }}
+                  >
+                    {column.header}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Array.from({ length: 6 }).map((_, rowIndex) => (
+                <TableRow key={`skeleton-${rowIndex}`}>
+                  {columns.map((column) => (
+                    <TableCell align={column.align} key={column.key}>
+                      <Skeleton
+                        variant="text"
+                        width={
+                          typeof column.width === 'number'
+                            ? Math.min(column.width, 140)
+                            : '80%'
+                        }
+                        sx={{ fontSize: '1rem' }}
+                      />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Card>
     );
   }
@@ -72,7 +105,7 @@ export function AppTable<T,>({
                 <TableCell
                   align={column.align}
                   key={column.key}
-                  sx={{ fontWeight: 500, whiteSpace: 'nowrap', width: column.width }}
+                  sx={{ fontWeight: 700, whiteSpace: 'nowrap', width: column.width }}
                 >
                   {column.header}
                 </TableCell>
