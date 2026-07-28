@@ -128,6 +128,7 @@ type FormState = {
   policy_id: number | '';
   work_schedule_id: number | '';
   work_location_id: number | '';
+  work_location_address: string;
   leave_package_id: number | '';
 };
 
@@ -155,6 +156,7 @@ const emptyForm: FormState = {
   policy_id: '',
   work_schedule_id: '',
   work_location_id: '',
+  work_location_address: '',
   leave_package_id: '',
 };
 
@@ -207,6 +209,7 @@ function employeeToForm(row: Employee): FormState {
     policy_id: row.policy_id ?? '',
     work_schedule_id: row.work_schedule_id ?? '',
     work_location_id: row.work_location_id ?? '',
+    work_location_address: row.work_location_address ?? '',
     leave_package_id: row.leave_package_id ?? '',
   };
 }
@@ -342,6 +345,7 @@ export function EmployeeFormPage() {
       policy_id: Number(form.policy_id),
       work_schedule_id: Number(form.work_schedule_id),
       work_location_id: Number(form.work_location_id),
+      work_location_address: form.work_location_address.trim() || null,
       leave_package_id: Number(form.leave_package_id),
     };
 
@@ -452,7 +456,7 @@ export function EmployeeFormPage() {
             </FormCell>
             <FormCell>
               <TextField
-                label="Email (optional)"
+                label="Work email (optional)"
                 value={form.email}
                 onChange={(e) => patchForm({ email: e.target.value })}
                 fullWidth
@@ -460,7 +464,7 @@ export function EmployeeFormPage() {
             </FormCell>
             <FormCell>
               <TextField
-                label="Phone (optional)"
+                label="Work phone (optional)"
                 value={form.phone}
                 onChange={(e) => patchForm({ phone: e.target.value })}
                 fullWidth
@@ -822,7 +826,7 @@ export function EmployeeFormPage() {
                   setFieldErrors((c) => clearFieldError(c, 'work_location_id'));
                 }}
                 error={Boolean(fieldErrors.work_location_id)}
-                helperText={fieldErrors.work_location_id}
+                helperText={fieldErrors.work_location_id ?? 'Used for mobile check-in'}
                 fullWidth
                 disabled={!formCompanyId}
               >
@@ -830,6 +834,15 @@ export function EmployeeFormPage() {
                   <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
                 ))}
               </TextField>
+            </FormCell>
+            <FormCell>
+              <TextField
+                label="Work location address (optional)"
+                value={form.work_location_address}
+                onChange={(e) => patchForm({ work_location_address: e.target.value })}
+                fullWidth
+                helperText="Detail desk/room address, e.g. Condo A, 3 floor, room A"
+              />
             </FormCell>
             <FormCell>
               <TextField
@@ -853,7 +866,6 @@ export function EmployeeFormPage() {
                 ))}
               </TextField>
             </FormCell>
-            <FormCell>{null}</FormCell>
             <FormCell>{null}</FormCell>
           </FormGrid>
         </CardContent>

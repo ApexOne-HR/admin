@@ -307,10 +307,10 @@ export function EmployeeDetailPage() {
               <DetailField label="Status" value={statusChip(employee.status)} />
             </FormCell>
             <FormCell>
-              <DetailField label="Email" value={employee.email} />
+              <DetailField label="Work email" value={employee.email} />
             </FormCell>
             <FormCell>
-              <DetailField label="Phone" value={employee.phone} />
+              <DetailField label="Work phone" value={employee.phone} />
             </FormCell>
             <FormCell>{null}</FormCell>
             <FormCell>{null}</FormCell>
@@ -427,11 +427,16 @@ export function EmployeeDetailPage() {
             </FormCell>
             <FormCell>
               <DetailField
+                label="Work location address"
+                value={employee.work_location_address}
+              />
+            </FormCell>
+            <FormCell>
+              <DetailField
                 label="Leave package"
                 value={formatEffective(defaults?.leave_package)}
               />
             </FormCell>
-            <FormCell>{null}</FormCell>
             <FormCell>{null}</FormCell>
           </FormGrid>
         </CardContent>

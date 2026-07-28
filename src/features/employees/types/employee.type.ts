@@ -34,6 +34,7 @@ export type Employee = {
   policy_id: number | null;
   work_schedule_id: number | null;
   work_location_id: number | null;
+  work_location_address: string | null;
   leave_package_id: number | null;
   employee_code: string;
   sir_name: string | null;
@@ -41,6 +42,8 @@ export type Employee = {
   myanmar_name: string | null;
   email: string | null;
   phone: string | null;
+  personal_email: string | null;
+  personal_phone: string | null;
   status: EmployeeStatus;
   employment_type: EmploymentType | null;
   employment_level: EmploymentLevel | null;
@@ -85,6 +88,7 @@ export type EmployeePayload = {
   policy_id: number;
   work_schedule_id: number;
   work_location_id: number;
+  work_location_address?: string | null;
   leave_package_id: number;
   employee_code: string;
   sir_name?: string | null;
@@ -92,6 +96,8 @@ export type EmployeePayload = {
   myanmar_name?: string | null;
   email?: string | null;
   phone?: string | null;
+  personal_email?: string | null;
+  personal_phone?: string | null;
   status?: EmployeeStatus | null;
   employment_type: EmploymentType;
   employment_level?: EmploymentLevel | null;

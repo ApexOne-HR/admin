@@ -45,6 +45,8 @@ type PersonalDraft = {
   nrc_number_serial: string;
   passport_number: string;
   ssb_number: string;
+  personal_email: string;
+  personal_phone: string;
   is_foreigner: boolean;
   income_tax_applicable: boolean;
   current_address: string;
@@ -63,6 +65,8 @@ function toDraft(employee: Employee): PersonalDraft {
     nrc_number_serial: parsedNrc?.serial ?? '',
     passport_number: employee.passport_number ?? '',
     ssb_number: employee.ssb_number ?? '',
+    personal_email: employee.personal_email ?? '',
+    personal_phone: employee.personal_phone ?? '',
     is_foreigner: employee.is_foreigner,
     income_tax_applicable: employee.income_tax_applicable,
     current_address: employee.current_address ?? '',
@@ -171,6 +175,8 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
           nrc_number: draft.is_foreigner ? null : nrcPreview || null,
           passport_number: draft.passport_number.trim() || null,
           ssb_number: draft.ssb_number.trim() || null,
+          personal_email: draft.personal_email.trim() || null,
+          personal_phone: draft.personal_phone.trim() || null,
           is_foreigner: draft.is_foreigner,
           income_tax_applicable: draft.income_tax_applicable,
           current_address: draft.current_address.trim() || null,
@@ -383,6 +389,26 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
                 fullWidth
               />
             </FormCell>
+            <FormCell>{null}</FormCell>
+            <FormCell>
+              <TextField
+                label="Personal email"
+                size="small"
+                value={draft.personal_email}
+                onChange={(e) => patchDraft({ personal_email: e.target.value })}
+                fullWidth
+              />
+            </FormCell>
+            <FormCell>
+              <TextField
+                label="Personal phone"
+                size="small"
+                value={draft.personal_phone}
+                onChange={(e) => patchDraft({ personal_phone: e.target.value })}
+                fullWidth
+              />
+            </FormCell>
+            <FormCell>{null}</FormCell>
             <FormCell span={3}>
               <TextField
                 label="Current address (optional)"
@@ -417,6 +443,13 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
             <FormCell>
               <ViewField label="SSB number" value={employee.ssb_number} />
             </FormCell>
+            <FormCell>
+              <ViewField label="Personal email" value={employee.personal_email} />
+            </FormCell>
+            <FormCell>
+              <ViewField label="Personal phone" value={employee.personal_phone} />
+            </FormCell>
+            <FormCell>{null}</FormCell>
             <FormCell>
               <ViewField label="Foreigner" value={employee.is_foreigner ? 'Yes' : 'No'} />
             </FormCell>
