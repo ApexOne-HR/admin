@@ -3,6 +3,7 @@ import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
 import * as extensionService from '../services/employee-extension.service';
 import type {
   AttachmentCategory,
+  EmployeeAssetPayload,
   EmployeeBankDraft,
   EmployeeEducationDraft,
   EmployeeEmergencyContactDraft,
@@ -19,6 +20,8 @@ export const employeeExtensionKeys = {
     ['admin', 'employees', employeeId, 'leave-allocations', { fiscalYearId }] as const,
   attachments: (employeeId: number) =>
     ['admin', 'employees', employeeId, 'attachments'] as const,
+  assets: (employeeId: number) =>
+    ['admin', 'employees', employeeId, 'assets'] as const,
 };
 
 function requireToken(token: string | null): string {
@@ -219,5 +222,60 @@ export function useDeleteEmployeeAttachmentMutation(employeeId: number) {
       });
       await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
     },
+  });
+}
+
+export function useEmployeeAssetsQuery(employeeId: number, enabled = true) {
+  const { token } = useAdminSession();
+  return useQuery({
+    queryKey: employeeExtensionKeys.assets(employeeId),
+    enabled: enabled && Boolean(token) && Boolean(employeeId),
+    queryFn: () => extensionService.listEmployeeAssets(requireToken(token), employeeId),
+  });
+}
+
+function useInvalidateEmployeeAssets(employeeId: number) {
+  const queryClient = useQueryClient();
+
+  return async () => {
+    await queryClient.invalidateQueries({
+      queryKey: employeeExtensionKeys.assets(employeeId),
+    });
+    await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
+  };
+}
+
+export function useCreateEmployeeAssetMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const invalidate = useInvalidateEmployeeAssets(employeeId);
+  return useMutation({
+    mutationFn: (payload: EmployeeAssetPayload) =>
+      extensionService.createEmployeeAsset(requireToken(token), employeeId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateEmployeeAssetMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const invalidate = useInvalidateEmployeeAssets(employeeId);
+  return useMutation({
+    mutationFn: ({ assetId, payload }: { assetId: number; payload: EmployeeAssetPayload }) =>
+      extensionService.updateEmployeeAsset(
+        requireToken(token),
+        employeeId,
+        assetId,
+        payload,
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteEmployeeAssetMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const invalidate = useInvalidateEmployeeAssets(employeeId);
+  return useMutation({
+    mutationFn: (assetId: number) =>
+      extensionService.deleteEmployeeAsset(requireToken(token), employeeId, assetId),
+    onSuccess: invalidate,
   });
 }

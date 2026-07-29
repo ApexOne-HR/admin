@@ -3,6 +3,8 @@ import type {
   AttachmentCategory,
   EmployeeAttachment,
   EmployeeAttachmentDownload,
+  EmployeeAsset,
+  EmployeeAssetPayload,
   EmployeeBank,
   EmployeeBankDraft,
   EmployeeEducation,
@@ -186,6 +188,52 @@ export async function deleteEmployeeAttachment(
   attachmentId: number,
 ) {
   await apiRequest<null>(`/employees/${employeeId}/attachments/${attachmentId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function listEmployeeAssets(token: string, employeeId: number) {
+  const response = await apiRequest<EmployeeAsset[]>(`/employees/${employeeId}/assets`, { token });
+  return response.data;
+}
+
+export async function createEmployeeAsset(
+  token: string,
+  employeeId: number,
+  payload: EmployeeAssetPayload,
+) {
+  const response = await apiRequest<EmployeeAsset>(`/employees/${employeeId}/assets`, {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+  return response.data;
+}
+
+export async function updateEmployeeAsset(
+  token: string,
+  employeeId: number,
+  assetId: number,
+  payload: EmployeeAssetPayload,
+) {
+  const response = await apiRequest<EmployeeAsset>(
+    `/employees/${employeeId}/assets/${assetId}`,
+    {
+      method: 'PUT',
+      token,
+      body: payload,
+    },
+  );
+  return response.data;
+}
+
+export async function deleteEmployeeAsset(
+  token: string,
+  employeeId: number,
+  assetId: number,
+) {
+  await apiRequest<null>(`/employees/${employeeId}/assets/${assetId}`, {
     method: 'DELETE',
     token,
   });

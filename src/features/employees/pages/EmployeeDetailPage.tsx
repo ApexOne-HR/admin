@@ -7,6 +7,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
@@ -39,6 +40,7 @@ import {
   RbacQueryError,
 } from '@/features/rbac/components/RbacShared';
 import { EmployeeAccountTab } from '../components/EmployeeAccountTab';
+import { EmployeeAssetsTab } from '../components/EmployeeAssetsTab';
 import { EmployeeBanksTab } from '../components/EmployeeBanksTab';
 import { EmployeeCompensationTab } from '../components/EmployeeCompensationTab';
 import { EmployeeDocumentsTab } from '../components/EmployeeDocumentsTab';
@@ -162,6 +164,7 @@ function initialDetailTab(searchParams: URLSearchParams): number {
   if (tab === 'education' || tab === '6') return 6;
   if (tab === 'leave' || tab === '7') return 7;
   if (tab === 'compensation' || tab === '8') return 8;
+  if (tab === 'assets' || tab === '9') return 9;
   if (tab === '1') return 1;
   return 0;
 }
@@ -175,6 +178,7 @@ export function EmployeeDetailPage() {
   const canUpdate = can(session?.user, 'employees.update');
   const canManageAccount = can(session?.user, 'employees.manage_account');
   const canManageSalary = can(session?.user, 'employees.manage_salary');
+  const canManageAssets = can(session?.user, 'employees.manage_assets');
   const [tab, setTab] = useState(() => initialDetailTab(searchParams));
 
   const employeeQuery = useEmployeeQuery(
@@ -284,6 +288,12 @@ export function EmployeeDetailPage() {
             <PaymentsOutlinedIcon fontSize="small" sx={{ color: 'success.dark' }} />,
             'Compensation',
             missing.has('compensation'),
+          )}
+        />
+        <Tab
+          label={tabLabel(
+            <Inventory2OutlinedIcon fontSize="small" sx={{ color: 'warning.dark' }} />,
+            'Assets',
           )}
         />
       </Tabs>
@@ -504,6 +514,10 @@ export function EmployeeDetailPage() {
           companyId={employee.company_id}
           canEdit={canManageSalary}
         />
+      ) : null}
+
+      {tab === 9 ? (
+        <EmployeeAssetsTab employeeId={employee.id} canManage={canManageAssets} />
       ) : null}
     </Stack>
   );

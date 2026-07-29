@@ -93,3 +93,40 @@ export type EmployeeAttachmentDownload = {
   expires_at: string;
   original_name: string;
 };
+
+export type AssetCategory =
+  | 'it_electronics'
+  | 'vehicles_housing'
+  | 'access_cards'
+  | 'software_digital'
+  | 'equipment_uniform'
+  | 'furniture'
+  | 'others';
+
+export type EmployeeAssetStatus = 'assigned' | 'returned' | 'lost' | 'damaged';
+
+export type EmployeeAsset = {
+  id: number;
+  employee_id: number;
+  category: AssetCategory;
+  category_label: string;
+  name: string;
+  identifier: string | null;
+  assigned_at: string;
+  returned_at: string | null;
+  status: EmployeeAssetStatus;
+  status_label: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EmployeeAssetPayload = {
+  category: AssetCategory;
+  name: string;
+  identifier: string | null;
+  assigned_at: string;
+  returned_at: string | null;
+  status: EmployeeAssetStatus;
+  notes: string | null;
+};
