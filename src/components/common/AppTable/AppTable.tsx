@@ -26,6 +26,7 @@ export type AppTableProps<T> = {
   rows: T[];
   getRowKey: (row: T, index: number) => string | number;
   emptyState?: ReactNode;
+  footer?: ReactNode;
   isLoading?: boolean;
   loadingLabel?: string;
 };
@@ -33,6 +34,7 @@ export type AppTableProps<T> = {
 export function AppTable<T,>({
   columns,
   emptyState,
+  footer,
   getRowKey,
   isLoading = false,
   loadingLabel,
@@ -125,6 +127,7 @@ export function AppTable<T,>({
           </TableBody>
         </Table>
       </TableContainer>
+      {footer}
     </Card>
   );
 }

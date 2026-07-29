@@ -59,20 +59,28 @@ type ItemDraft = {
 type FormState = {
   company_id: number | '';
   name: string;
-  code: string;
   description: string;
   is_paid: boolean;
   is_active: boolean;
+  allowed_in_probation: boolean;
+  min_service_years: string;
+  allow_half_day: boolean;
+  allowed_gender: '' | 'male' | 'female';
+  min_notice_days: string;
   items: ItemDraft[];
 };
 
 const emptyForm: FormState = {
   company_id: '',
   name: '',
-  code: '',
   description: '',
   is_paid: true,
   is_active: true,
+  allowed_in_probation: true,
+  min_service_years: '0',
+  allow_half_day: false,
+  allowed_gender: '',
+  min_notice_days: '0',
   items: [],
 };
 
@@ -144,9 +152,13 @@ export function LeavePage() {
       ...emptyForm,
       company_id: row.company_id,
       name: row.name,
-      code: row.code,
       is_paid: row.is_paid,
       is_active: row.is_active,
+      allowed_in_probation: row.allowed_in_probation,
+      min_service_years: String(row.min_service_years ?? 0),
+      allow_half_day: row.allow_half_day,
+      allowed_gender: row.allowed_gender ?? '',
+      min_notice_days: String(row.min_notice_days ?? 0),
     });
     setFormError(null);
     setFieldErrors({});
@@ -177,12 +189,10 @@ export function LeavePage() {
       {
         company_id: form.company_id,
         name: form.name,
-        code: form.code,
       },
       [
         { key: 'company_id', label: 'Company' },
         { key: 'name', label: 'Name' },
-        { key: 'code', label: 'Code', when: tab === 'types' },
       ],
     );
     setFieldErrors(required);
@@ -195,9 +205,13 @@ export function LeavePage() {
         const payload = {
           company_id: Number(form.company_id),
           name: form.name.trim(),
-          code: form.code.trim(),
           is_paid: form.is_paid,
           is_active: form.is_active,
+          allowed_in_probation: form.allowed_in_probation,
+          min_service_years: Number(form.min_service_years) || 0,
+          allow_half_day: form.allow_half_day,
+          allowed_gender: form.allowed_gender || null,
+          min_notice_days: Number(form.min_notice_days) || 0,
         };
         if (editingId) {
           await updateType.mutateAsync({ id: editingId, payload });
@@ -269,11 +283,25 @@ export function LeavePage() {
       render: (row) => row.company?.name ?? `Company #${row.company_id}`,
     },
     { key: 'name', header: 'Name', render: (row) => row.name },
-    { key: 'code', header: 'Code', render: (row) => row.code },
     {
       key: 'paid',
       header: 'Paid',
       render: (row) => (row.is_paid ? 'Yes' : 'No'),
+    },
+    {
+      key: 'probation',
+      header: 'Probation',
+      render: (row) => (row.allowed_in_probation ? 'Allowed' : 'Blocked'),
+    },
+    {
+      key: 'service',
+      header: 'Min years',
+      render: (row) => String(row.min_service_years ?? 0),
+    },
+    {
+      key: 'unit',
+      header: 'Day unit',
+      render: (row) => (row.allow_half_day ? 'Full / Half' : 'Full'),
     },
     {
       key: 'status',
@@ -309,7 +337,7 @@ export function LeavePage() {
       header: 'Items',
       render: (row) =>
         (row.items ?? [])
-          .map((item) => `${item.leave_type?.code ?? item.leave_type_id}: ${item.days_allowed}d`)
+          .map((item) => `${item.leave_type?.name ?? item.leave_type_id}: ${item.days_allowed}d`)
           .join(' · ') || '—',
     },
     {
@@ -450,28 +478,50 @@ export function LeavePage() {
 
             {tab === 'types' ? (
               <>
+                <Typography variant="subtitle2" sx={{ gridColumn: { md: '1 / -1' }, mt: 1 }}>
+                  Eligibility
+                </Typography>
                 <TextField
-                  label="Code"
-                  value={form.code}
-                  onChange={(event) => {
-                    setFieldErrors((current) => clearFieldError(current, 'code'));
-                    setForm((current) => ({ ...current, code: event.target.value }));
-                  }}
-                  required
-                  error={Boolean(fieldErrors.code)}
-                  helperText={fieldErrors.code}
-                  fullWidth
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={form.is_paid}
-                      onChange={(_, checked) =>
-                        setForm((current) => ({ ...current, is_paid: checked }))
-                      }
-                    />
+                  label="Min service years"
+                  type="number"
+                  value={form.min_service_years}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, min_service_years: event.target.value }))
                   }
-                  label="Paid leave"
+                  fullWidth
+                  helperText="0 = no wait. Example: 1 = after 1 service year"
+                  slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
+                />
+                <TextField
+                  select
+                  label="Allowed gender"
+                  value={form.allowed_gender}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      allowed_gender: event.target.value as '' | 'male' | 'female',
+                    }))
+                  }
+                  fullWidth
+                  helperText="All = no gender restriction"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="male">Male</MenuItem>
+                  <MenuItem value="female">Female</MenuItem>
+                </TextField>
+                <Typography variant="subtitle2" sx={{ gridColumn: { md: '1 / -1' }, mt: 1 }}>
+                  Request rules
+                </Typography>
+                <TextField
+                  label="Min notice days"
+                  type="number"
+                  value={form.min_notice_days}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, min_notice_days: event.target.value }))
+                  }
+                  fullWidth
+                  helperText="Must request at least N days before leave start"
+                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
                 />
               </>
             ) : (
@@ -543,7 +593,7 @@ export function LeavePage() {
                     <MenuItem value="">Select type</MenuItem>
                     {companyTypes.map((type) => (
                       <MenuItem key={type.id} value={type.id}>
-                        {type.name} ({type.code})
+                        {type.name}
                       </MenuItem>
                     ))}
                   </TextField>
@@ -576,6 +626,48 @@ export function LeavePage() {
                   </IconButton>
                 </Box>
               ))}
+            </Stack>
+          ) : null}
+
+          {tab === 'types' ? (
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              spacing={{ xs: 0.5, md: 3 }}
+              sx={{ flexWrap: 'wrap' }}
+            >
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.is_paid}
+                    onChange={(_, checked) =>
+                      setForm((current) => ({ ...current, is_paid: checked }))
+                    }
+                  />
+                }
+                label="Paid leave"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.allowed_in_probation}
+                    onChange={(_, checked) =>
+                      setForm((current) => ({ ...current, allowed_in_probation: checked }))
+                    }
+                  />
+                }
+                label="Allowed in probation"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.allow_half_day}
+                    onChange={(_, checked) =>
+                      setForm((current) => ({ ...current, allow_half_day: checked }))
+                    }
+                  />
+                }
+                label="Allow half day"
+              />
             </Stack>
           ) : null}
 

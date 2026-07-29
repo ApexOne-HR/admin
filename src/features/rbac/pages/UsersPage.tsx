@@ -7,13 +7,13 @@ import {
   FormGroup,
   IconButton,
   MenuItem,
-  Pagination,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { AppModal } from '@/components/common/AppModal';
+import { AppPagination } from '@/components/common/AppPagination';
 import { AppTable, type AppTableColumn } from '@/components/common/AppTable';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useToast } from '@/components/common/feedback/ToastProvider';
@@ -68,7 +68,7 @@ export function UsersPage() {
   const canView = can(session?.user, 'users.view');
   const canAssign = can(session?.user, 'users.assign_role');
   const [page, setPage] = useState(1);
-  const perPage = 15;
+  const [perPage, setPerPage] = useState(10);
 
   const usersQuery = useUsersQuery(page, perPage, canView);
   const rolesQuery = useRolesQuery(can(session?.user, 'roles.view') || canAssign);
@@ -85,10 +85,8 @@ export function UsersPage() {
   const [scopeDrafts, setScopeDrafts] = useState<ScopeDraft[]>([]);
   const [scopeError, setScopeError] = useState<string | null>(null);
 
-  const lastPage = useMemo(() => {
-    const meta = usersQuery.data?.meta;
-    return typeof meta?.last_page === 'number' ? meta.last_page : 1;
-  }, [usersQuery.data?.meta]);
+  const paginationMeta = usersQuery.data?.meta;
+  const lastPage = typeof paginationMeta?.last_page === 'number' ? paginationMeta.last_page : 1;
 
   if (!canView) {
     return (
@@ -238,19 +236,23 @@ export function UsersPage() {
         rows={usersQuery.data?.users ?? []}
         getRowKey={(row) => row.id}
         isLoading={usersQuery.isLoading}
+        footer={
+          paginationMeta && paginationMeta.total > 0 ? (
+            <AppPagination
+              page={page}
+              lastPage={lastPage}
+              perPage={perPage}
+              total={paginationMeta.total}
+              onPageChange={setPage}
+              onPerPageChange={(nextPerPage) => {
+                setPerPage(nextPerPage);
+                setPage(1);
+              }}
+            />
+          ) : undefined
+        }
         emptyState={<EmptyState title="No users" description="No users found." />}
       />
-
-      {lastPage > 1 ? (
-        <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
-          <Pagination
-            page={page}
-            count={lastPage}
-            onChange={(_, nextPage) => setPage(nextPage)}
-            color="primary"
-          />
-        </Stack>
-      ) : null}
 
       <AppModal
         open={selectedUser !== null}

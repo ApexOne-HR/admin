@@ -1,10 +1,16 @@
+export type LeaveAllowedGender = 'male' | 'female';
+
 export type LeaveType = {
   id: number;
   company_id: number;
   name: string;
-  code: string;
   is_paid: boolean;
   is_active: boolean;
+  allowed_in_probation: boolean;
+  min_service_years: number;
+  allow_half_day: boolean;
+  allowed_gender: LeaveAllowedGender | null;
+  min_notice_days: number;
   company?: { id: number; name: string };
   created_at: string;
   updated_at: string;
@@ -17,7 +23,6 @@ export type LeavePackageItem = {
   leave_type?: {
     id: number;
     name: string;
-    code: string;
     is_paid: boolean;
   } | null;
 };
@@ -37,9 +42,13 @@ export type LeavePackage = {
 export type LeaveTypePayload = {
   company_id: number;
   name: string;
-  code: string;
   is_paid?: boolean;
   is_active?: boolean;
+  allowed_in_probation?: boolean;
+  min_service_years?: number;
+  allow_half_day?: boolean;
+  allowed_gender?: LeaveAllowedGender | null;
+  min_notice_days?: number;
 };
 
 export type LeavePackagePayload = {

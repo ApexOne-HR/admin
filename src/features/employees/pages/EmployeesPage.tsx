@@ -15,8 +15,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { AppPagination } from '@/components/common/AppPagination';
 import { AppTable, type AppTableColumn } from '@/components/common/AppTable';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useConfirm } from '@/components/common/feedback/ConfirmProvider';
@@ -62,7 +63,7 @@ function missingSectionsLabel(sections: string[] | undefined) {
 
 function statusChip(status: EmployeeStatus) {
   const meta = employeeStatusMeta(status);
-  return <Chip size="small" label={meta.label} color={meta.color} />;
+  return <Chip size="small" label={meta.label} color={meta.color} variant="outlined" />;
 }
 
 export function EmployeesPage() {
@@ -78,7 +79,7 @@ export function EmployeesPage() {
   const [filterCompanyId, setFilterCompanyId] = useState<number | ''>('');
   const [filterDivisionId, setFilterDivisionId] = useState<number | ''>('');
   const [filterStatus, setFilterStatus] = useState<EmployeeStatus | ''>('');
-  const perPage = 15;
+  const [perPage, setPerPage] = useState(10);
 
   const listParams = {
     page,
@@ -100,10 +101,8 @@ export function EmployeesPage() {
   const companies = companiesQuery.data ?? [];
   const filterDivisions = divisionsQuery.data ?? [];
   const employees = employeesQuery.data?.employees ?? [];
-  const lastPage = useMemo(() => {
-    const meta = employeesQuery.data?.meta;
-    return typeof meta?.last_page === 'number' ? meta.last_page : 1;
-  }, [employeesQuery.data?.meta]);
+  const paginationMeta = employeesQuery.data?.meta;
+  const lastPage = typeof paginationMeta?.last_page === 'number' ? paginationMeta.last_page : 1;
   const hasActiveFilters =
     q !== ''
     || filterCompanyId !== ''
@@ -357,23 +356,25 @@ export function EmployeesPage() {
         rows={employees}
         getRowKey={(row) => row.id}
         isLoading={employeesQuery.isLoading}
+        footer={
+          paginationMeta && paginationMeta.total > 0 ? (
+            <AppPagination
+              page={page}
+              lastPage={lastPage}
+              perPage={perPage}
+              total={paginationMeta.total}
+              onPageChange={setPage}
+              onPerPageChange={(nextPerPage) => {
+                setPerPage(nextPerPage);
+                setPage(1);
+              }}
+            />
+          ) : undefined
+        }
         emptyState={
           <EmptyState title="No employees" description="Create the first employee for a company." />
         }
       />
-      {lastPage > 1 && (
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
-          <Button size="small" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            Previous
-          </Button>
-          <Typography variant="body2">
-            Page {page} of {lastPage}
-          </Typography>
-          <Button size="small" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>
-            Next
-          </Button>
-        </Stack>
-      )}
     </Stack>
   );
 }

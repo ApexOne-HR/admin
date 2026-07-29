@@ -1,0 +1,1 @@
+export { AppPagination } from './AppPagination';

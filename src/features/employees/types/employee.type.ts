@@ -7,6 +7,7 @@ export type EmployeeStatus =
   | 'dismissed';
 export type EmploymentType = 'full-time' | 'part-time' | 'contract' | 'others';
 export type EmploymentLevel = 'Junior' | 'Senior' | 'Manager' | 'Executive';
+export type EmployeeGender = 'male' | 'female' | 'other';
 
 export type EffectiveDefault = {
   id: number;
@@ -54,6 +55,7 @@ export type Employee = {
   permanent_date: string | null;
   service_years: number;
   date_of_birth: string | null;
+  gender: EmployeeGender | null;
   is_foreigner: boolean;
   nrc_number: string | null;
   passport_number: string | null;
@@ -107,6 +109,7 @@ export type EmployeePayload = {
   probation_periods_months?: number | null;
   permanent_date?: string | null;
   date_of_birth?: string | null;
+  gender?: EmployeeGender | null;
   is_foreigner?: boolean;
   nrc_number?: string | null;
   passport_number?: string | null;

@@ -65,7 +65,6 @@ export type EmployeeLeaveAllocation = {
   leave_type?: {
     id: number;
     name: string;
-    code: string | null;
     is_paid: boolean;
   } | null;
   created_at: string;

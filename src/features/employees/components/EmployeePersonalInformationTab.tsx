@@ -20,7 +20,7 @@ import {
   useEmployeeNrcOptionsQuery,
   useUpdateEmployeeMutation,
 } from '../hooks/useEmployeeQueries';
-import type { Employee, NrcCitizenship } from '../types/employee.type';
+import type { Employee, EmployeeGender, NrcCitizenship } from '../types/employee.type';
 import {
   NRC_CITIZENSHIP_OPTIONS,
   formatNrcPreview,
@@ -38,6 +38,7 @@ const cardHeaderSx = {
 
 type PersonalDraft = {
   date_of_birth: string;
+  gender: EmployeeGender | '';
   nrc_code: string;
   nrc_township_code: string;
   nrc_township_name: string;
@@ -58,6 +59,7 @@ function toDraft(employee: Employee): PersonalDraft {
 
   return {
     date_of_birth: employee.date_of_birth ?? '',
+    gender: employee.gender ?? '',
     nrc_code: parsedNrc?.code ?? '',
     nrc_township_code: parsedNrc?.townshipCode ?? '',
     nrc_township_name: '',
@@ -172,6 +174,7 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
         id: employee.id,
         payload: {
           date_of_birth: draft.date_of_birth || null,
+          gender: draft.gender || null,
           nrc_number: draft.is_foreigner ? null : nrcPreview || null,
           passport_number: draft.passport_number.trim() || null,
           ssb_number: draft.ssb_number.trim() || null,
@@ -246,6 +249,23 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
                 fullWidth
                 slotProps={{ inputLabel: { shrink: true } }}
               />
+            </FormCell>
+            <FormCell>
+              <TextField
+                select
+                label="Gender"
+                size="small"
+                value={draft.gender}
+                onChange={(e) =>
+                  patchDraft({ gender: e.target.value as EmployeeGender | '' })
+                }
+                fullWidth
+              >
+                <MenuItem value="">Not set</MenuItem>
+                <MenuItem value="male">Male</MenuItem>
+                <MenuItem value="female">Female</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </TextField>
             </FormCell>
             <FormCell>
               <FormControlLabel
@@ -436,6 +456,20 @@ export function EmployeePersonalInformationTab({ employee, canEdit }: Props) {
           <FormGrid>
             <FormCell>
               <ViewField label="Date of birth" value={employee.date_of_birth} />
+            </FormCell>
+            <FormCell>
+              <ViewField
+                label="Gender"
+                value={
+                  employee.gender === 'male'
+                    ? 'Male'
+                    : employee.gender === 'female'
+                      ? 'Female'
+                      : employee.gender === 'other'
+                        ? 'Other'
+                        : null
+                }
+              />
             </FormCell>
             <FormCell>
               <ViewField label="Passport" value={employee.passport_number} />

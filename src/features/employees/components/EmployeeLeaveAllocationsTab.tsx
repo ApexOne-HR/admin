@@ -95,11 +95,6 @@ export function EmployeeLeaveAllocationsTab({ employeeId, companyId, canEdit }: 
       render: (row) => row.leave_type?.name ?? `Type #${row.leave_type_id}`,
     },
     {
-      key: 'code',
-      header: 'Code',
-      render: (row) => row.leave_type?.code ?? '—',
-    },
-    {
       key: 'total',
       header: 'Total',
       render: (row) =>
