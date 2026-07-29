@@ -56,6 +56,7 @@ function missingSectionsLabel(sections: string[] | undefined) {
     emergency: 'Emergency',
     education: 'Education',
     leave: 'Leave balances',
+    compensation: 'Compensation',
   };
 
   return `Missing: ${sections.map((key) => labels[key] ?? key).join(', ')}`;

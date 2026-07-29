@@ -7,6 +7,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
@@ -37,6 +38,7 @@ import {
   RbacQueryError,
 } from '@/features/rbac/components/RbacShared';
 import { EmployeeBanksTab } from '../components/EmployeeBanksTab';
+import { EmployeeCompensationTab } from '../components/EmployeeCompensationTab';
 import { EmployeeDocumentsTab } from '../components/EmployeeDocumentsTab';
 import { EmployeeEducationsTab } from '../components/EmployeeEducationsTab';
 import { EmployeeEmergencyContactsTab } from '../components/EmployeeEmergencyContactsTab';
@@ -156,6 +158,7 @@ function initialDetailTab(searchParams: URLSearchParams): number {
   if (tab === 'emergency' || tab === '4') return 4;
   if (tab === 'education' || tab === '5') return 5;
   if (tab === 'leave' || tab === '6') return 6;
+  if (tab === 'compensation' || tab === '7') return 7;
   return 0;
 }
 
@@ -166,6 +169,7 @@ export function EmployeeDetailPage() {
   const { session } = useAdminSession();
   const canView = can(session?.user, 'employees.view');
   const canUpdate = can(session?.user, 'employees.update');
+  const canManageSalary = can(session?.user, 'employees.manage_salary');
   const [tab, setTab] = useState(() => initialDetailTab(searchParams));
 
   const employeeQuery = useEmployeeQuery(
@@ -262,6 +266,13 @@ export function EmployeeDetailPage() {
             <AssignmentTurnedInOutlinedIcon fontSize="small" sx={{ color: 'success.main' }} />,
             'Leave balances',
             missing.has('leave'),
+          )}
+        />
+        <Tab
+          label={tabLabel(
+            <PaymentsOutlinedIcon fontSize="small" sx={{ color: 'success.dark' }} />,
+            'Compensation',
+            missing.has('compensation'),
           )}
         />
       </Tabs>
@@ -469,6 +480,14 @@ export function EmployeeDetailPage() {
           employeeId={employee.id}
           companyId={employee.company_id}
           canEdit={canUpdate}
+        />
+      ) : null}
+
+      {tab === 7 ? (
+        <EmployeeCompensationTab
+          employeeId={employee.id}
+          companyId={employee.company_id}
+          canEdit={canManageSalary}
         />
       ) : null}
     </Stack>

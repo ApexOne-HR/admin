@@ -4,6 +4,7 @@ export type NavigationItemId =
   | 'masters'
   | 'leave'
   | 'fiscal'
+  | 'compensation'
   | 'employees'
   | 'users'
   | 'roles'
@@ -58,6 +59,13 @@ export const adminNavigation: NavigationEntry[] = [
     label: 'Masters',
     path: '/masters',
     description: 'Locations, work schedules, and policies.',
+    permission: 'organizations.view',
+  },
+  {
+    id: 'compensation',
+    label: 'Compensation',
+    path: '/compensation',
+    description: 'Allowances and deductions catalog.',
     permission: 'organizations.view',
   },
   {

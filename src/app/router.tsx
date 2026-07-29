@@ -3,6 +3,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
 import { OrganizationPage } from '@/features/organization/pages/OrganizationPage';
 import { MastersPage } from '@/features/masters/pages/MastersPage';
 import { LeavePage } from '@/features/leave/pages/LeavePage';
+import { CompensationPage } from '@/features/compensation/pages/CompensationPage';
 import { FiscalYearsPage } from '@/features/fiscal/pages/FiscalYearsPage';
 import { EmployeesPage } from '@/features/employees/pages/EmployeesPage';
 import { EmployeeFormPage } from '@/features/employees/pages/EmployeeFormPage';
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           { path: 'organization', element: <OrganizationPage /> },
           { path: 'masters', element: <MastersPage /> },
           { path: 'leave', element: <LeavePage /> },
+          { path: 'compensation', element: <CompensationPage /> },
           { path: 'fiscal-years', element: <FiscalYearsPage /> },
           { path: 'employees', element: <EmployeesPage /> },
           { path: 'employees/new', element: <EmployeeFormPage /> },
