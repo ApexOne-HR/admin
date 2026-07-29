@@ -36,6 +36,7 @@ const navigationIcons: Record<NavigationItemId, typeof DashboardRoundedIcon> = {
   compensation: PaymentsRoundedIcon,
   fiscal: CalendarMonthRoundedIcon,
   employees: BadgeRoundedIcon,
+  'org-chart': AccountTreeRoundedIcon,
   users: PeopleRoundedIcon,
   rbac: AdminPanelSettingsRoundedIcon,
   roles: SecurityRoundedIcon,

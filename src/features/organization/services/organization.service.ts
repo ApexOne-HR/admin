@@ -9,6 +9,7 @@ import type {
   Division,
   DivisionPayload,
 } from '../types/organization.type';
+import type { OrgChart } from '../types/org-chart.type';
 
 export async function listCompanies(token: string, activeOnly?: boolean) {
   const response = await apiRequest<Company[]>('/companies', {
@@ -151,4 +152,21 @@ export async function updateDesignation(
 
 export async function deleteDesignation(token: string, id: number) {
   await apiRequest<null>(`/designations/${id}`, { method: 'DELETE', token });
+}
+
+export async function getOrgChart(
+  token: string,
+  companyId: number,
+  divisionId?: number,
+  departmentId?: number,
+) {
+  const response = await apiRequest<OrgChart>('/employees/org-chart', {
+    token,
+    query: {
+      company_id: companyId,
+      division_id: divisionId,
+      department_id: departmentId,
+    },
+  });
+  return response.data;
 }

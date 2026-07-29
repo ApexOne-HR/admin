@@ -14,6 +14,8 @@ export const organizationKeys = {
   departments: (divisionId?: number) => ['admin', 'departments', { divisionId }] as const,
   designations: (companyId?: number, departmentId?: number) =>
     ['admin', 'designations', { companyId, departmentId }] as const,
+  orgChart: (companyId?: number, divisionId?: number, departmentId?: number) =>
+    ['admin', 'employees', 'org-chart', { companyId, divisionId, departmentId }] as const,
 };
 
 function requireToken(token: string | null): string {
@@ -61,6 +63,27 @@ export function useDesignationsQuery(companyId?: number, departmentId?: number, 
     enabled: enabled && Boolean(token),
     queryFn: () =>
       organizationService.listDesignations(requireToken(token), companyId, departmentId),
+  });
+}
+
+export function useOrgChartQuery(
+  companyId?: number,
+  divisionId?: number,
+  departmentId?: number,
+  enabled = true,
+) {
+  const { token } = useAdminSession();
+
+  return useQuery({
+    queryKey: organizationKeys.orgChart(companyId, divisionId, departmentId),
+    enabled: enabled && Boolean(token) && Boolean(companyId),
+    queryFn: () =>
+      organizationService.getOrgChart(
+        requireToken(token),
+        companyId as number,
+        divisionId,
+        departmentId,
+      ),
   });
 }
 

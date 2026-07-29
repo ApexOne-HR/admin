@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
 import { OrganizationPage } from '@/features/organization/pages/OrganizationPage';
+import { OrgChartPage } from '@/features/organization/pages/OrgChartPage';
 import { MastersPage } from '@/features/masters/pages/MastersPage';
 import { HolidaysPage } from '@/features/holidays/pages/HolidaysPage';
 import { LeavePage } from '@/features/leave/pages/LeavePage';
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
             ),
           },
           { path: 'organization', element: <OrganizationPage /> },
+          { path: 'org-chart', element: <OrgChartPage /> },
           { path: 'masters', element: <MastersPage /> },
           { path: 'holidays', element: <HolidaysPage /> },
           { path: 'leave', element: <LeavePage /> },
