@@ -80,3 +80,47 @@ export function useDeleteEmployeeMutation() {
     },
   });
 }
+
+export function useActivateEmployeeAccountMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => employeeService.activateEmployeeAccount(requireToken(token), employeeId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
+    },
+  });
+}
+
+export function useDeactivateEmployeeAccountMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => employeeService.deactivateEmployeeAccount(requireToken(token), employeeId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
+    },
+  });
+}
+
+export function useResetEmployeeAccountPasswordMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => employeeService.resetEmployeeAccountPassword(requireToken(token), employeeId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
+    },
+  });
+}
+
+export function useRevokeEmployeeAccountSessionsMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => employeeService.revokeEmployeeAccountSessions(requireToken(token), employeeId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
+    },
+  });
+}

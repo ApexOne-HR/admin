@@ -43,7 +43,13 @@ export async function createEmployee(token: string, payload: EmployeePayload) {
     token,
     body: payload,
   });
-  return response.data;
+  return {
+    employee: response.data,
+    temporaryPassword:
+      typeof response.meta.temporary_password === 'string'
+        ? response.meta.temporary_password
+        : null,
+  };
 }
 
 export async function updateEmployee(
@@ -61,4 +67,42 @@ export async function updateEmployee(
 
 export async function deleteEmployee(token: string, id: number) {
   await apiRequest<null>(`/employees/${id}`, { method: 'DELETE', token });
+}
+
+export async function activateEmployeeAccount(token: string, employeeId: number) {
+  const response = await apiRequest<Employee>(`/employees/${employeeId}/account/activate`, {
+    method: 'POST',
+    token,
+  });
+  return response.data;
+}
+
+export async function deactivateEmployeeAccount(token: string, employeeId: number) {
+  const response = await apiRequest<Employee>(`/employees/${employeeId}/account/deactivate`, {
+    method: 'POST',
+    token,
+  });
+  return response.data;
+}
+
+export async function resetEmployeeAccountPassword(token: string, employeeId: number) {
+  const response = await apiRequest<Employee>(`/employees/${employeeId}/account/reset-password`, {
+    method: 'POST',
+    token,
+  });
+  return {
+    employee: response.data,
+    temporaryPassword:
+      typeof response.meta.temporary_password === 'string'
+        ? response.meta.temporary_password
+        : null,
+  };
+}
+
+export async function revokeEmployeeAccountSessions(token: string, employeeId: number) {
+  const response = await apiRequest<Employee>(`/employees/${employeeId}/account/revoke-sessions`, {
+    method: 'POST',
+    token,
+  });
+  return response.data;
 }

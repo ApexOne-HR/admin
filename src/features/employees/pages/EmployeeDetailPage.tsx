@@ -7,6 +7,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
@@ -37,6 +38,7 @@ import {
   PermissionGate,
   RbacQueryError,
 } from '@/features/rbac/components/RbacShared';
+import { EmployeeAccountTab } from '../components/EmployeeAccountTab';
 import { EmployeeBanksTab } from '../components/EmployeeBanksTab';
 import { EmployeeCompensationTab } from '../components/EmployeeCompensationTab';
 import { EmployeeDocumentsTab } from '../components/EmployeeDocumentsTab';
@@ -152,13 +154,15 @@ function formatEffective(item: EffectiveDefault | null | undefined) {
 
 function initialDetailTab(searchParams: URLSearchParams): number {
   const tab = searchParams.get('tab');
-  if (tab === 'personal' || tab === '1') return 1;
-  if (tab === 'documents' || tab === '2') return 2;
-  if (tab === 'banks' || tab === '3') return 3;
-  if (tab === 'emergency' || tab === '4') return 4;
-  if (tab === 'education' || tab === '5') return 5;
-  if (tab === 'leave' || tab === '6') return 6;
-  if (tab === 'compensation' || tab === '7') return 7;
+  if (tab === 'account') return 1;
+  if (tab === 'personal' || tab === '2') return 2;
+  if (tab === 'documents' || tab === '3') return 3;
+  if (tab === 'banks' || tab === '4') return 4;
+  if (tab === 'emergency' || tab === '5') return 5;
+  if (tab === 'education' || tab === '6') return 6;
+  if (tab === 'leave' || tab === '7') return 7;
+  if (tab === 'compensation' || tab === '8') return 8;
+  if (tab === '1') return 1;
   return 0;
 }
 
@@ -169,6 +173,7 @@ export function EmployeeDetailPage() {
   const { session } = useAdminSession();
   const canView = can(session?.user, 'employees.view');
   const canUpdate = can(session?.user, 'employees.update');
+  const canManageAccount = can(session?.user, 'employees.manage_account');
   const canManageSalary = can(session?.user, 'employees.manage_salary');
   const [tab, setTab] = useState(() => initialDetailTab(searchParams));
 
@@ -225,6 +230,12 @@ export function EmployeeDetailPage() {
           label={tabLabel(
             <PersonOutlineOutlinedIcon fontSize="small" sx={{ color: 'primary.main' }} />,
             'Employee Profile',
+          )}
+        />
+        <Tab
+          label={tabLabel(
+            <ManageAccountsRoundedIcon fontSize="small" sx={{ color: 'secondary.main' }} />,
+            'Account',
           )}
         />
         <Tab
@@ -456,26 +467,30 @@ export function EmployeeDetailPage() {
       ) : null}
 
       {tab === 1 ? (
-        <EmployeePersonalInformationTab employee={employee} canEdit={canUpdate} />
+        <EmployeeAccountTab employee={employee} canManage={canManageAccount} />
       ) : null}
 
       {tab === 2 ? (
-        <EmployeeDocumentsTab employeeId={employee.id} canEdit={canUpdate} />
+        <EmployeePersonalInformationTab employee={employee} canEdit={canUpdate} />
       ) : null}
 
       {tab === 3 ? (
-        <EmployeeBanksTab employeeId={employee.id} canEdit={canUpdate} />
+        <EmployeeDocumentsTab employeeId={employee.id} canEdit={canUpdate} />
       ) : null}
 
       {tab === 4 ? (
-        <EmployeeEmergencyContactsTab employeeId={employee.id} canEdit={canUpdate} />
+        <EmployeeBanksTab employeeId={employee.id} canEdit={canUpdate} />
       ) : null}
 
       {tab === 5 ? (
-        <EmployeeEducationsTab employeeId={employee.id} canEdit={canUpdate} />
+        <EmployeeEmergencyContactsTab employeeId={employee.id} canEdit={canUpdate} />
       ) : null}
 
       {tab === 6 ? (
+        <EmployeeEducationsTab employeeId={employee.id} canEdit={canUpdate} />
+      ) : null}
+
+      {tab === 7 ? (
         <EmployeeLeaveAllocationsTab
           employeeId={employee.id}
           companyId={employee.company_id}
@@ -483,7 +498,7 @@ export function EmployeeDetailPage() {
         />
       ) : null}
 
-      {tab === 7 ? (
+      {tab === 8 ? (
         <EmployeeCompensationTab
           employeeId={employee.id}
           companyId={employee.company_id}

@@ -352,8 +352,14 @@ export function EmployeeFormPage() {
     try {
       if (editingId === null) {
         const created = await createEmployee.mutateAsync(payload);
-        toast.success('Employee created.');
-        navigate(`/employees/${created.id}`);
+        if (created.temporaryPassword) {
+          toast.success(
+            `Employee created. Temporary password: ${created.temporaryPassword}`,
+          );
+        } else {
+          toast.success('Employee created.');
+        }
+        navigate(`/employees/${created.employee.id}?tab=account`);
       } else {
         await updateEmployee.mutateAsync({ id: editingId, payload });
         toast.success('Employee updated.');

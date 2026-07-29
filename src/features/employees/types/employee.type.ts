@@ -26,7 +26,7 @@ export type NrcOption = {
 
 export type Employee = {
   id: number;
-  user_id: number | null;
+  user_id: number;
   company_id: number;
   division_id: number | null;
   department_id: number | null;
@@ -68,6 +68,22 @@ export type Employee = {
   department?: { id: number; name: string } | null;
   designation?: { id: number; name: string } | null;
   manager?: { id: number; employee_code: string; full_name: string } | null;
+  user?: {
+    id: number;
+    name: string;
+    email: string | null;
+    is_active: boolean;
+    must_change_password: boolean;
+    roles: Array<{ id: number; name: string; slug: string }>;
+  } | null;
+  account?: {
+    user_id: number;
+    login_email: string | null;
+    is_active: boolean;
+    must_change_password: boolean;
+    mobile_login: 'employee_code';
+    employee_code: string;
+  } | null;
   profile_incomplete?: boolean;
   missing_sections?: string[];
   effective_defaults?: {
@@ -81,7 +97,6 @@ export type Employee = {
 };
 
 export type EmployeePayload = {
-  user_id?: number | null;
   company_id: number;
   division_id: number;
   department_id: number;
