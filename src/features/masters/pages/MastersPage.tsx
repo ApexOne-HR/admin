@@ -51,6 +51,7 @@ import {
   useUpdateWorkScheduleMutation,
   useWorkSchedulesQuery,
 } from '../hooks/useMastersQueries';
+import { useHolidayCalendarsQuery } from '@/features/holidays/hooks/useHolidaysQueries';
 import type {
   Location,
   Policy,
@@ -96,6 +97,7 @@ type FormState = {
   ot_allowed: boolean;
   is_sandwich_leave_applicable: boolean;
   work_schedule_id: number | '';
+  holiday_calendar_id: number | '';
   is_active: boolean;
 };
 
@@ -169,6 +171,7 @@ const emptyForm: FormState = {
   ot_allowed: true,
   is_sandwich_leave_applicable: false,
   work_schedule_id: '',
+  holiday_calendar_id: '',
   is_active: true,
 };
 
@@ -178,6 +181,7 @@ export function MastersPage() {
   const confirm = useConfirm();
   const canView = can(session?.user, 'organizations.view');
   const canManage = can(session?.user, 'organizations.manage');
+  const canViewHolidays = can(session?.user, 'holidays.view');
 
   const [tab, setTab] = useState<MastersTab>('locations');
   const [formOpen, setFormOpen] = useState(false);
@@ -190,6 +194,10 @@ export function MastersPage() {
   const locationsQuery = useLocationsQuery(undefined, canView);
   const schedulesQuery = useWorkSchedulesQuery(undefined, canView);
   const policiesQuery = usePoliciesQuery(undefined, canView);
+  const holidayCalendarsQuery = useHolidayCalendarsQuery(
+    typeof form.company_id === 'number' ? form.company_id : undefined,
+    canViewHolidays && formOpen && tab === 'policies',
+  );
 
   const createLocation = useCreateLocationMutation();
   const updateLocation = useUpdateLocationMutation();
@@ -224,6 +232,14 @@ export function MastersPage() {
         (item) => form.company_id === '' || item.company_id === form.company_id,
       ),
     [schedulesQuery.data, form.company_id],
+  );
+
+  const calendarsForCompany = useMemo(
+    () =>
+      (holidayCalendarsQuery.data ?? []).filter(
+        (item) => form.company_id === '' || item.company_id === form.company_id,
+      ),
+    [holidayCalendarsQuery.data, form.company_id],
   );
 
   if (!canView) {
@@ -288,6 +304,7 @@ export function MastersPage() {
       ot_allowed: row.ot_allowed,
       is_sandwich_leave_applicable: row.is_sandwich_leave_applicable,
       work_schedule_id: row.work_schedule_id ?? '',
+      holiday_calendar_id: row.holiday_calendar_id ?? '',
       is_active: row.is_active,
     });
     setFormError(null);
@@ -425,6 +442,8 @@ export function MastersPage() {
           ot_allowed: form.ot_allowed,
           is_sandwich_leave_applicable: form.is_sandwich_leave_applicable,
           work_schedule_id: form.work_schedule_id === '' ? null : Number(form.work_schedule_id),
+          holiday_calendar_id:
+            form.holiday_calendar_id === '' ? null : Number(form.holiday_calendar_id),
           is_active: form.is_active,
         };
         if (editingId) {
@@ -706,6 +725,7 @@ export function MastersPage() {
                 ...current,
                 company_id: event.target.value === '' ? '' : Number(event.target.value),
                 work_schedule_id: '',
+                holiday_calendar_id: '',
               }));
             }}
             required
@@ -958,6 +978,27 @@ export function MastersPage() {
                 {schedulesForCompany.map((schedule) => (
                   <MenuItem key={schedule.id} value={schedule.id}>
                     {schedule.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                label="Holiday calendar (optional)"
+                value={form.holiday_calendar_id}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    holiday_calendar_id:
+                      event.target.value === '' ? '' : Number(event.target.value),
+                  }))
+                }
+                fullWidth
+                helperText="Date exceptions for leave / attendance (same company)"
+              >
+                <MenuItem value="">None</MenuItem>
+                {calendarsForCompany.map((calendar) => (
+                  <MenuItem key={calendar.id} value={calendar.id}>
+                    {calendar.name}
                   </MenuItem>
                 ))}
               </TextField>

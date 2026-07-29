@@ -56,9 +56,17 @@ export type Policy = {
   ot_allowed: boolean;
   is_sandwich_leave_applicable: boolean;
   work_schedule_id: number | null;
+  holiday_calendar_id: number | null;
   is_active: boolean;
   company?: { id: number; name: string; code: string };
   work_schedule?: WorkSchedule | null;
+  holiday_calendar?: {
+    id: number;
+    company_id: number;
+    name: string;
+    code: string | null;
+    is_active: boolean;
+  } | null;
   created_at: string;
   updated_at: string;
 };
@@ -91,5 +99,6 @@ export type PolicyPayload = {
   ot_allowed?: boolean;
   is_sandwich_leave_applicable?: boolean;
   work_schedule_id?: number | null;
+  holiday_calendar_id?: number | null;
   is_active?: boolean;
 };

@@ -4,6 +4,7 @@ import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import FestivalRoundedIcon from '@mui/icons-material/FestivalRounded';
 import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
@@ -30,6 +31,7 @@ const navigationIcons: Record<NavigationItemId, typeof DashboardRoundedIcon> = {
   dashboard: DashboardRoundedIcon,
   organization: AccountTreeRoundedIcon,
   masters: TuneRoundedIcon,
+  holidays: FestivalRoundedIcon,
   leave: EventAvailableRoundedIcon,
   compensation: PaymentsRoundedIcon,
   fiscal: CalendarMonthRoundedIcon,

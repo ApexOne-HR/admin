@@ -2,6 +2,7 @@ export type NavigationItemId =
   | 'dashboard'
   | 'organization'
   | 'masters'
+  | 'holidays'
   | 'leave'
   | 'fiscal'
   | 'compensation'
@@ -60,6 +61,13 @@ export const adminNavigation: NavigationEntry[] = [
     path: '/masters',
     description: 'Locations, work schedules, and policies.',
     permission: 'organizations.view',
+  },
+  {
+    id: 'holidays',
+    label: 'Holidays',
+    path: '/holidays',
+    description: 'Holiday calendars and dated exceptions.',
+    permission: 'holidays.view',
   },
   {
     id: 'compensation',

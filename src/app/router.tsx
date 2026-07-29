@@ -2,6 +2,7 @@ import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
 import { OrganizationPage } from '@/features/organization/pages/OrganizationPage';
 import { MastersPage } from '@/features/masters/pages/MastersPage';
+import { HolidaysPage } from '@/features/holidays/pages/HolidaysPage';
 import { LeavePage } from '@/features/leave/pages/LeavePage';
 import { CompensationPage } from '@/features/compensation/pages/CompensationPage';
 import { FiscalYearsPage } from '@/features/fiscal/pages/FiscalYearsPage';
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           },
           { path: 'organization', element: <OrganizationPage /> },
           { path: 'masters', element: <MastersPage /> },
+          { path: 'holidays', element: <HolidaysPage /> },
           { path: 'leave', element: <LeavePage /> },
           { path: 'compensation', element: <CompensationPage /> },
           { path: 'fiscal-years', element: <FiscalYearsPage /> },

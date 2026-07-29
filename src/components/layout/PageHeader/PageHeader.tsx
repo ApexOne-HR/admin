@@ -1,5 +1,6 @@
-import NavigateNextRoundedIcon from '@mui/icons-material/NavigateNextRounded';
-import { Breadcrumbs, Stack, Typography } from '@mui/material';
+// import NavigateNextRoundedIcon from '@mui/icons-material/NavigateNextRounded';
+// import { Breadcrumbs, Stack, Typography } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
 type PageHeaderProps = {
@@ -19,7 +20,7 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
       }}
     >
       <Stack spacing={0.75}>
-        <Breadcrumbs
+        {/* <Breadcrumbs
           separator={<NavigateNextRoundedIcon fontSize="small" />}
           sx={{
             color: 'text.secondary',
@@ -33,7 +34,7 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
           <Typography variant="body2" color="primary.main" sx={{ fontSize: 12, fontWeight: 500 }}>
             {title}
           </Typography>
-        </Breadcrumbs>
+        </Breadcrumbs> */}
         <Typography variant="h1">{title}</Typography>
         {description ? (
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 760 }}>
