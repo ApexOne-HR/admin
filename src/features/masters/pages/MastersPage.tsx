@@ -2,10 +2,9 @@ import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import {
+  Box,
   Button,
-  Checkbox,
   FormControlLabel,
-  FormGroup,
   IconButton,
   MenuItem,
   Stack,
@@ -52,7 +51,13 @@ import {
   useUpdateWorkScheduleMutation,
   useWorkSchedulesQuery,
 } from '../hooks/useMastersQueries';
-import type { Location, Policy, WorkSchedule, WorkingDay } from '../types/masters.type';
+import type {
+  Location,
+  Policy,
+  WorkSchedule,
+  WorkScheduleDay,
+  WorkingDay,
+} from '../types/masters.type';
 
 type MastersTab = 'locations' | 'schedules' | 'policies';
 
@@ -66,6 +71,17 @@ const WEEK_DAYS: { value: WorkingDay; label: string }[] = [
   { value: 'sun', label: 'Sun' },
 ];
 
+const WEEKDAY_VALUES: WorkingDay[] = ['mon', 'tue', 'wed', 'thu', 'fri'];
+
+type DayFormRow = {
+  day: WorkingDay;
+  is_working: boolean;
+  check_in_time: string;
+  check_out_time: string;
+  break_start_time: string;
+  break_end_time: string;
+};
+
 type FormState = {
   company_id: number | '';
   name: string;
@@ -74,11 +90,7 @@ type FormState = {
   latitude: string;
   longitude: string;
   geofence_radius_m: string;
-  check_in_time: string;
-  check_out_time: string;
-  break_start_time: string;
-  break_end_time: string;
-  working_days: WorkingDay[];
+  days: DayFormRow[];
   late_grace_minutes: string;
   early_leave_grace_minutes: string;
   ot_allowed: boolean;
@@ -86,6 +98,62 @@ type FormState = {
   work_schedule_id: number | '';
   is_active: boolean;
 };
+
+function defaultScheduleDays(): DayFormRow[] {
+  return WEEK_DAYS.map(({ value }) => {
+    const isWeekday = WEEKDAY_VALUES.includes(value);
+    return {
+      day: value,
+      is_working: isWeekday,
+      check_in_time: '09:00',
+      check_out_time: '17:00',
+      break_start_time: isWeekday ? '12:00' : '',
+      break_end_time: isWeekday ? '13:00' : '',
+    };
+  });
+}
+
+function sliceTime(value: string | null | undefined, fallback = ''): string {
+  if (!value) {
+    return fallback;
+  }
+  return value.slice(0, 5);
+}
+
+function daysFromSchedule(days: WorkScheduleDay[] | undefined): DayFormRow[] {
+  const byDay = new Map((days ?? []).map((row) => [row.day, row]));
+  return WEEK_DAYS.map(({ value }) => {
+    const row = byDay.get(value);
+    const isWorking = Boolean(row?.is_working);
+    return {
+      day: value,
+      is_working: isWorking,
+      check_in_time: sliceTime(row?.check_in_time, '09:00'),
+      check_out_time: sliceTime(row?.check_out_time, '17:00'),
+      break_start_time: sliceTime(row?.break_start_time),
+      break_end_time: sliceTime(row?.break_end_time),
+    };
+  });
+}
+
+function formatScheduleSummary(row: WorkSchedule): string {
+  const working = (row.days ?? []).filter((day) => day.is_working);
+  if (working.length === 0) {
+    return '—';
+  }
+
+  const groups = new Map<string, string[]>();
+  for (const day of working) {
+    const key = `${sliceTime(day.check_in_time)}–${sliceTime(day.check_out_time)}`;
+    const labels = groups.get(key) ?? [];
+    labels.push(day.day);
+    groups.set(key, labels);
+  }
+
+  return Array.from(groups.entries())
+    .map(([hours, days]) => `${days.join(', ')} ${hours}`)
+    .join(' · ');
+}
 
 const emptyForm: FormState = {
   company_id: '',
@@ -95,11 +163,7 @@ const emptyForm: FormState = {
   latitude: '',
   longitude: '',
   geofence_radius_m: '100',
-  check_in_time: '09:00',
-  check_out_time: '18:00',
-  break_start_time: '',
-  break_end_time: '',
-  working_days: ['mon', 'tue', 'wed', 'thu', 'fri'],
+  days: defaultScheduleDays(),
   late_grace_minutes: '15',
   early_leave_grace_minutes: '0',
   ot_allowed: true,
@@ -173,7 +237,7 @@ export function MastersPage() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, days: defaultScheduleDays() });
     setFormError(null);
     setFieldErrors({});
     setFormOpen(true);
@@ -204,11 +268,7 @@ export function MastersPage() {
       company_id: row.company_id,
       name: row.name,
       code: row.code ?? '',
-      check_in_time: row.check_in_time?.slice(0, 5) || '09:00',
-      check_out_time: row.check_out_time?.slice(0, 5) || '18:00',
-      break_start_time: row.break_start_time?.slice(0, 5) || '',
-      break_end_time: row.break_end_time?.slice(0, 5) || '',
-      working_days: row.working_days?.length ? row.working_days : emptyForm.working_days,
+      days: daysFromSchedule(row.days),
       is_active: row.is_active,
     });
     setFormError(null);
@@ -235,30 +295,78 @@ export function MastersPage() {
     setFormOpen(true);
   };
 
+  const updateDay = (day: WorkingDay, patch: Partial<DayFormRow>) => {
+    setForm((current) => ({
+      ...current,
+      days: current.days.map((row) => (row.day === day ? { ...row, ...patch } : row)),
+    }));
+  };
+
+  const copyMondayToWeekdays = () => {
+    const monday = form.days.find((row) => row.day === 'mon');
+    if (!monday) {
+      return;
+    }
+    setForm((current) => ({
+      ...current,
+      days: current.days.map((row) =>
+        WEEKDAY_VALUES.includes(row.day) && row.day !== 'mon'
+          ? {
+              ...row,
+              is_working: monday.is_working,
+              check_in_time: monday.check_in_time,
+              check_out_time: monday.check_out_time,
+              break_start_time: monday.break_start_time,
+              break_end_time: monday.break_end_time,
+            }
+          : row,
+      ),
+    }));
+  };
+
   const handleSave = async () => {
     setFormError(null);
     const nextErrors = validateRequiredFields(
       {
         company_id: form.company_id,
         name: form.name,
-        check_in_time: form.check_in_time,
-        check_out_time: form.check_out_time,
       },
       [
         { key: 'company_id', label: 'Company' },
         { key: 'name', label: 'Name' },
-        { key: 'check_in_time', label: 'Check-in', when: tab === 'schedules' },
-        { key: 'check_out_time', label: 'Check-out', when: tab === 'schedules' },
       ],
     );
 
-    if (
-      tab === 'schedules' &&
-      form.check_in_time &&
-      form.check_out_time &&
-      form.check_out_time <= form.check_in_time
-    ) {
-      nextErrors.check_out_time = 'Check-out must be after check-in.';
+    if (tab === 'schedules') {
+      const workingDays = form.days.filter((row) => row.is_working);
+      if (workingDays.length === 0) {
+        nextErrors.days = 'Select at least one working day.';
+      }
+
+      for (const row of workingDays) {
+        const prefix = `days.${row.day}`;
+        if (!row.check_in_time || !row.check_out_time) {
+          nextErrors[`${prefix}.check_in_time`] = 'Check-in and check-out are required.';
+          continue;
+        }
+        if (row.check_out_time <= row.check_in_time) {
+          nextErrors[`${prefix}.check_out_time`] = 'Check-out must be after check-in.';
+        }
+        const hasBreakStart = Boolean(row.break_start_time);
+        const hasBreakEnd = Boolean(row.break_end_time);
+        if (hasBreakStart !== hasBreakEnd) {
+          nextErrors[`${prefix}.break_start_time`] = 'Break start and end must both be set or both empty.';
+        } else if (hasBreakStart && hasBreakEnd) {
+          if (row.break_end_time <= row.break_start_time) {
+            nextErrors[`${prefix}.break_end_time`] = 'Break end must be after break start.';
+          } else if (
+            row.break_start_time < row.check_in_time ||
+            row.break_end_time > row.check_out_time
+          ) {
+            nextErrors[`${prefix}.break_start_time`] = 'Break must be within check-in and check-out.';
+          }
+        }
+      }
     }
 
     setFieldErrors(nextErrors);
@@ -290,11 +398,14 @@ export function MastersPage() {
           company_id: Number(form.company_id),
           name: form.name.trim(),
           code: form.code.trim() || undefined,
-          check_in_time: form.check_in_time,
-          check_out_time: form.check_out_time,
-          break_start_time: form.break_start_time || null,
-          break_end_time: form.break_end_time || null,
-          working_days: form.working_days,
+          days: form.days.map((row) => ({
+            day: row.day,
+            is_working: row.is_working,
+            check_in_time: row.is_working ? row.check_in_time : null,
+            check_out_time: row.is_working ? row.check_out_time : null,
+            break_start_time: row.is_working && row.break_start_time ? row.break_start_time : null,
+            break_end_time: row.is_working && row.break_end_time ? row.break_end_time : null,
+          })),
           is_active: form.is_active,
         };
         if (editingId) {
@@ -418,13 +529,13 @@ export function MastersPage() {
       header: 'Hours',
       render: (row) => (
         <Typography variant="body2" color="text.secondary">
-          {row.check_in_time} – {row.check_out_time}
+          {formatScheduleSummary(row)}
         </Typography>
       ),
     },
     {
       key: 'days',
-      header: 'Days',
+      header: 'Working days',
       render: (row) => (
         <Typography variant="body2" color="text.secondary">
           {(row.working_days ?? []).join(', ') || '—'}
@@ -568,6 +679,7 @@ export function MastersPage() {
         open={formOpen}
         onClose={() => setFormOpen(false)}
         title={editingId ? `Edit ${tabTitle}` : `Add ${tabTitle}`}
+        maxWidth={tab === 'schedules' ? 'md' : 'sm'}
         actions={
           <>
             <Button onClick={() => setFormOpen(false)}>Cancel</Button>
@@ -670,82 +782,139 @@ export function MastersPage() {
           ) : null}
 
           {tab === 'schedules' ? (
-            <>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Check-in"
-                  type="time"
-                  value={form.check_in_time}
-                  onChange={(event) => {
-                    setFieldErrors((current) => clearFieldError(current, 'check_in_time'));
-                    setForm((current) => ({ ...current, check_in_time: event.target.value }));
-                  }}
-                  required
-                  fullWidth
-                  error={Boolean(fieldErrors.check_in_time)}
-                  helperText={fieldErrors.check_in_time}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-                <TextField
-                  label="Check-out"
-                  type="time"
-                  value={form.check_out_time}
-                  onChange={(event) => {
-                    setFieldErrors((current) => clearFieldError(current, 'check_out_time'));
-                    setForm((current) => ({ ...current, check_out_time: event.target.value }));
-                  }}
-                  required
-                  fullWidth
-                  error={Boolean(fieldErrors.check_out_time)}
-                  helperText={fieldErrors.check_out_time}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </Stack>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Break start"
-                  type="time"
-                  value={form.break_start_time}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, break_start_time: event.target.value }))
-                  }
-                  fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-                <TextField
-                  label="Break end"
-                  type="time"
-                  value={form.break_end_time}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, break_end_time: event.target.value }))
-                  }
-                  fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </Stack>
-              <FormGroup row>
-                {WEEK_DAYS.map((day) => (
-                  <FormControlLabel
-                    key={day.value}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={form.working_days.includes(day.value)}
-                        onChange={() =>
-                          setForm((current) => ({
-                            ...current,
-                            working_days: current.working_days.includes(day.value)
-                              ? current.working_days.filter((item) => item !== day.value)
-                              : [...current.working_days, day.value],
-                          }))
+            <Stack spacing={1.5}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 1,
+                  alignItems: { sm: 'center' },
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Typography variant="subtitle2">Daily hours</Typography>
+                <Button size="small" onClick={copyMondayToWeekdays}>
+                  Copy Mon → Fri
+                </Button>
+              </Box>
+              {fieldErrors.days ? (
+                <Typography color="error" variant="body2">
+                  {fieldErrors.days}
+                </Typography>
+              ) : null}
+              {form.days.map((row) => {
+                const label = WEEK_DAYS.find((day) => day.value === row.day)?.label ?? row.day;
+                const prefix = `days.${row.day}`;
+                return (
+                  <Box
+                    key={row.day}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      p: 1.5,
+                    }}
+                  >
+                    <Stack spacing={1.5}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={row.is_working}
+                            onChange={(event) => {
+                              setFieldErrors((current) => {
+                                const next = { ...current };
+                                delete next.days;
+                                delete next[`${prefix}.check_in_time`];
+                                delete next[`${prefix}.check_out_time`];
+                                delete next[`${prefix}.break_start_time`];
+                                delete next[`${prefix}.break_end_time`];
+                                return next;
+                              });
+                              updateDay(row.day, { is_working: event.target.checked });
+                            }}
+                          />
                         }
+                        label={`${label} working`}
                       />
-                    }
-                    label={day.label}
-                  />
-                ))}
-              </FormGroup>
-            </>
+                      {row.is_working ? (
+                        <>
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                            <TextField
+                              label="Check-in"
+                              type="time"
+                              value={row.check_in_time}
+                              onChange={(event) => {
+                                setFieldErrors((current) =>
+                                  clearFieldError(current, `${prefix}.check_in_time`),
+                                );
+                                updateDay(row.day, { check_in_time: event.target.value });
+                              }}
+                              required
+                              fullWidth
+                              error={Boolean(fieldErrors[`${prefix}.check_in_time`])}
+                              helperText={fieldErrors[`${prefix}.check_in_time`]}
+                              slotProps={{ inputLabel: { shrink: true } }}
+                            />
+                            <TextField
+                              label="Check-out"
+                              type="time"
+                              value={row.check_out_time}
+                              onChange={(event) => {
+                                setFieldErrors((current) =>
+                                  clearFieldError(current, `${prefix}.check_out_time`),
+                                );
+                                updateDay(row.day, { check_out_time: event.target.value });
+                              }}
+                              required
+                              fullWidth
+                              error={Boolean(fieldErrors[`${prefix}.check_out_time`])}
+                              helperText={fieldErrors[`${prefix}.check_out_time`]}
+                              slotProps={{ inputLabel: { shrink: true } }}
+                            />
+                          </Stack>
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                            <TextField
+                              label="Break start"
+                              type="time"
+                              value={row.break_start_time}
+                              onChange={(event) => {
+                                setFieldErrors((current) =>
+                                  clearFieldError(current, `${prefix}.break_start_time`),
+                                );
+                                updateDay(row.day, { break_start_time: event.target.value });
+                              }}
+                              fullWidth
+                              error={Boolean(fieldErrors[`${prefix}.break_start_time`])}
+                              helperText={fieldErrors[`${prefix}.break_start_time`]}
+                              slotProps={{ inputLabel: { shrink: true } }}
+                            />
+                            <TextField
+                              label="Break end"
+                              type="time"
+                              value={row.break_end_time}
+                              onChange={(event) => {
+                                setFieldErrors((current) =>
+                                  clearFieldError(current, `${prefix}.break_end_time`),
+                                );
+                                updateDay(row.day, { break_end_time: event.target.value });
+                              }}
+                              fullWidth
+                              error={Boolean(fieldErrors[`${prefix}.break_end_time`])}
+                              helperText={fieldErrors[`${prefix}.break_end_time`]}
+                              slotProps={{ inputLabel: { shrink: true } }}
+                            />
+                          </Stack>
+                        </>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          Off
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                );
+              })}
+            </Stack>
           ) : null}
 
           {tab === 'policies' ? (

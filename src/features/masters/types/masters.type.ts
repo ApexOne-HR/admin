@@ -1,5 +1,23 @@
 export type WorkingDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+export type WorkScheduleDay = {
+  day: WorkingDay;
+  is_working: boolean;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  break_start_time: string | null;
+  break_end_time: string | null;
+};
+
+export type WorkScheduleDayPayload = {
+  day: WorkingDay;
+  is_working: boolean;
+  check_in_time?: string | null;
+  check_out_time?: string | null;
+  break_start_time?: string | null;
+  break_end_time?: string | null;
+};
+
 export type Location = {
   id: number;
   company_id: number;
@@ -20,10 +38,7 @@ export type WorkSchedule = {
   company_id: number;
   name: string;
   code: string | null;
-  check_in_time: string;
-  check_out_time: string;
-  break_start_time: string | null;
-  break_end_time: string | null;
+  days: WorkScheduleDay[];
   working_days: WorkingDay[];
   is_active: boolean;
   company?: { id: number; name: string; code: string };
@@ -63,11 +78,7 @@ export type WorkSchedulePayload = {
   company_id: number;
   name: string;
   code?: string;
-  check_in_time: string;
-  check_out_time: string;
-  break_start_time?: string | null;
-  break_end_time?: string | null;
-  working_days?: WorkingDay[];
+  days: WorkScheduleDayPayload[];
   is_active?: boolean;
 };
 
