@@ -13,6 +13,7 @@ export type NavigationItemId =
   | 'roles'
   | 'permissions'
   | 'settings'
+  | 'audit-logs'
   | 'rbac';
 
 export type NavigationItem = {
@@ -139,6 +140,13 @@ export const adminNavigation: NavigationEntry[] = [
     path: '/settings',
     description: 'Admin preferences and system settings.',
   },
+  {
+    id: 'audit-logs',
+    label: 'Audit logs',
+    path: '/settings/audit-logs',
+    description: 'Review Admin changes by date and feature.',
+    permission: 'admin_audits.view',
+  },
 ];
 
 function flattenNavigation(entries: NavigationEntry[]): NavigationItem[] {
@@ -146,8 +154,12 @@ function flattenNavigation(entries: NavigationEntry[]): NavigationItem[] {
 }
 
 export function getNavigationItemByPath(pathname: string) {
-  return flattenNavigation(adminNavigation).find((item) => item.path === pathname)
-    ?? flattenNavigation(adminNavigation)[0];
+  const items = flattenNavigation(adminNavigation);
+  return (
+    items.find((item) => item.path === pathname)
+    ?? items.find((item) => pathname.startsWith(`${item.path}/`))
+    ?? items[0]
+  );
 }
 
 export function filterNavigationByPermission(

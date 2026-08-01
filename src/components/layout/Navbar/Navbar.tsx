@@ -1,4 +1,5 @@
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
@@ -7,6 +8,7 @@ import { useState, type MouseEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getNavigationItemByPath } from '@/config/navigation';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
+import { can } from '@/features/auth/services/auth.service';
 
 type NavbarProps = {
   onOpenSidebar: () => void;
@@ -20,6 +22,7 @@ export function Navbar({ onOpenSidebar, onToggleSidebar }: NavbarProps) {
   const { logout, session } = useAdminSession();
   const [profileAnchorEl, setProfileAnchorEl] = useState<HTMLElement | null>(null);
   const isProfileMenuOpen = Boolean(profileAnchorEl);
+  const canViewAudits = can(session?.user, 'admin_audits.view');
 
   const handleCloseProfileMenu = () => setProfileAnchorEl(null);
 
@@ -115,6 +118,20 @@ export function Navbar({ onOpenSidebar, onToggleSidebar }: NavbarProps) {
             </ListItemIcon>
             Settings
           </MenuItem>
+          {canViewAudits ? (
+            <MenuItem
+              onClick={() => {
+                handleCloseProfileMenu();
+                void navigate('/settings/audit-logs');
+              }}
+              sx={{ gap: 1.5, py: 1.25 }}
+            >
+              <ListItemIcon sx={{ minWidth: 'auto !important' }}>
+                <HistoryRoundedIcon fontSize="small" />
+              </ListItemIcon>
+              Audit logs
+            </MenuItem>
+          ) : null}
           <MenuItem onClick={() => void handleLogout()} sx={{ gap: 1.5, py: 1.25 }}>
             <ListItemIcon sx={{ minWidth: 'auto !important' }}>
               <LogoutRoundedIcon fontSize="small" />

@@ -99,13 +99,3 @@ export function localTimeFromIso(
     return '';
   }
 }
-
-export function attendanceAuditActionLabel(action: string): string {
-  const labels: Record<string, string> = {
-    'attendance.created': 'Created',
-    'attendance.corrected': 'Corrected',
-    'attendance.voided': 'Voided',
-    'attendance.restored': 'Restored',
-  };
-  return labels[action] ?? action;
-}

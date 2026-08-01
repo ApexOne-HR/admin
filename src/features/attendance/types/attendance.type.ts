@@ -31,18 +31,6 @@ export type AttendanceActorSummary = {
   email: string | null;
 };
 
-export type AttendanceAuditLog = {
-  id: number;
-  action: string;
-  reason: string | null;
-  before_values: Record<string, unknown> | null;
-  after_values: Record<string, unknown> | null;
-  metadata: Record<string, unknown> | null;
-  request_id: string | null;
-  actor: AttendanceActorSummary | null;
-  created_at: string;
-};
-
 export type AttendanceRecord = {
   id: number;
   employee_id: number;
@@ -88,7 +76,6 @@ export type AttendanceRecord = {
   creator: AttendanceActorSummary | null;
   updater: AttendanceActorSummary | null;
   voider: AttendanceActorSummary | null;
-  audit_logs?: AttendanceAuditLog[];
   created_at: string;
   updated_at: string;
 };

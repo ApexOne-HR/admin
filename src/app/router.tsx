@@ -13,6 +13,7 @@ import { EmployeeDetailPage } from '@/features/employees/pages/EmployeeDetailPag
 import { AttendanceRecordsPage } from '@/features/attendance/pages/AttendanceRecordsPage';
 import { AttendanceRecordCreatePage } from '@/features/attendance/pages/AttendanceRecordCreatePage';
 import { AttendanceRecordDetailPage } from '@/features/attendance/pages/AttendanceRecordDetailPage';
+import { AuditLogsPage } from '@/features/audit/pages/AuditLogsPage';
 import { PermissionsPage } from '@/features/rbac/pages/PermissionsPage';
 import { RolesPage } from '@/features/rbac/pages/RolesPage';
 import { UsersPage } from '@/features/rbac/pages/UsersPage';
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
               />
             ),
           },
+          { path: 'settings/audit-logs', element: <AuditLogsPage /> },
           { path: '*', element: <Navigate to="/dashboard" replace /> },
         ],
       },

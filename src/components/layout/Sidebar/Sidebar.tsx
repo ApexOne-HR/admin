@@ -44,6 +44,7 @@ const navigationIcons: Record<NavigationItemId, typeof DashboardRoundedIcon> = {
   roles: SecurityRoundedIcon,
   permissions: VpnKeyRoundedIcon,
   settings: SettingsRoundedIcon,
+  'audit-logs': FactCheckRoundedIcon,
 };
 
 type SidebarProps = {

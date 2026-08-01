@@ -1,7 +1,6 @@
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
-import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import {
@@ -43,7 +42,6 @@ import type {
   AttendanceUpdatePayload,
 } from '../types/attendance.type';
 import {
-  attendanceAuditActionLabel,
   attendanceEntryTypeFromRecord,
   attendanceSourceLabel,
   attendanceStatusMeta,
@@ -224,7 +222,6 @@ export function AttendanceRecordDetailPage() {
     draft.attendanceType !== 'absent' && draft.attendanceType !== 'full_day_leave';
   const saving =
     updateRecord.isPending || voidRecord.isPending || restoreRecord.isPending;
-  const auditLogs = record.audit_logs ?? [];
 
   const openCorrect = () => {
     setDraft(draftFromRecord(record));
@@ -507,50 +504,6 @@ export function AttendanceRecordDetailPage() {
           />
           <DetailField label="Void reason" value={record.void_reason} />
         </DetailGrid>
-      </SectionCard>
-
-      <SectionCard
-        title={sectionTitle(
-          <HistoryOutlinedIcon fontSize="small" sx={{ color: 'secondary.main' }} />,
-          'Audit timeline',
-        )}
-      >
-        {auditLogs.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No audit events yet.
-          </Typography>
-        ) : (
-          <Stack spacing={1.5}>
-            {auditLogs.map((log) => (
-              <Box
-                key={log.id}
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  p: 1.5,
-                }}
-              >
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  spacing={1}
-                  sx={{ justifyContent: 'space-between', mb: 0.5 }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {attendanceAuditActionLabel(log.action)}
-                    {log.actor?.name ? ` · ${log.actor.name}` : ''}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {formatAttendanceDateTime(log.created_at, record.timezone)}
-                  </Typography>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  {log.reason?.trim() || 'No reason provided.'}
-                </Typography>
-              </Box>
-            ))}
-          </Stack>
-        )}
       </SectionCard>
 
       <AppModal
