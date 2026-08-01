@@ -1,5 +1,7 @@
 import { apiRequest } from '@/infra/http/apiClient';
 import type {
+  AttendanceBulkCreatePayload,
+  AttendanceBulkCreateResult,
   AttendanceCreatePayload,
   AttendanceListParams,
   AttendancePaginationMeta,
@@ -52,6 +54,22 @@ export async function createAttendanceRecord(
     token,
     body: payload,
   });
+  return response.data;
+}
+
+export async function bulkCreateAttendanceRecords(
+  token: string,
+  employeeId: number,
+  payload: AttendanceBulkCreatePayload,
+) {
+  const response = await apiRequest<AttendanceBulkCreateResult>(
+    `/employees/${employeeId}/attendance-records/bulk`,
+    {
+      method: 'POST',
+      token,
+      body: payload,
+    },
+  );
   return response.data;
 }
 

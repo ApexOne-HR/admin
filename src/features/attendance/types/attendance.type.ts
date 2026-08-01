@@ -117,6 +117,25 @@ export type AttendanceCreatePayload = {
   reason?: string | null;
 };
 
+export type AttendanceBulkCreatePayload = {
+  dates: string[];
+  attendance_type: AttendanceEntryType;
+  check_in_time?: string | null;
+  check_out_time?: string | null;
+  check_in_location_id?: number | null;
+  check_out_location_id?: number | null;
+  check_in_latitude?: number | null;
+  check_in_longitude?: number | null;
+  check_out_latitude?: number | null;
+  check_out_longitude?: number | null;
+  reason?: string | null;
+};
+
+export type AttendanceBulkCreateResult = {
+  created: AttendanceRecord[];
+  skipped: Array<{ date: string; reason: string }>;
+};
+
 export type AttendanceUpdatePayload = {
   attendance_type: AttendanceEntryType;
   check_in_time?: string | null;

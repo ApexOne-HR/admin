@@ -46,6 +46,13 @@ export async function listWorkSchedules(token: string, companyId?: number) {
   return response.data;
 }
 
+export async function getWorkSchedule(token: string, id: number) {
+  const response = await apiRequest<WorkSchedule>(`/work-schedules/${id}`, {
+    token,
+  });
+  return response.data;
+}
+
 export async function createWorkSchedule(token: string, payload: WorkSchedulePayload) {
   const response = await apiRequest<WorkSchedule>('/work-schedules', {
     method: 'POST',
@@ -77,6 +84,11 @@ export async function listPolicies(token: string, companyId?: number) {
     token,
     query: { company_id: companyId },
   });
+  return response.data;
+}
+
+export async function getPolicy(token: string, id: number) {
+  const response = await apiRequest<Policy>(`/policies/${id}`, { token });
   return response.data;
 }
 

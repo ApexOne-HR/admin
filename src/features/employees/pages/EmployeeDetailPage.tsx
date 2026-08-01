@@ -5,13 +5,14 @@ import CallOutlinedIcon from '@mui/icons-material/CallOutlined';
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
-import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import WorkOutlineRoundedIcon from '@mui/icons-material/WorkOutlineRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
@@ -41,6 +42,7 @@ import {
 } from '@/features/rbac/components/RbacShared';
 import { EmployeeAccountTab } from '../components/EmployeeAccountTab';
 import { EmployeeAssetsTab } from '../components/EmployeeAssetsTab';
+import { EmployeeAttendanceTab } from '../components/EmployeeAttendanceTab';
 import { EmployeeBanksTab } from '../components/EmployeeBanksTab';
 import { EmployeeCompensationTab } from '../components/EmployeeCompensationTab';
 import { EmployeeDocumentsTab } from '../components/EmployeeDocumentsTab';
@@ -156,7 +158,8 @@ function formatEffective(item: EffectiveDefault | null | undefined) {
 
 function initialDetailTab(searchParams: URLSearchParams): number {
   const tab = searchParams.get('tab');
-  if (tab === 'account') return 1;
+  if (tab === 'attendance' || tab === '0') return 0;
+  if (tab === 'profile' || tab === '1') return 1;
   if (tab === 'personal' || tab === '2') return 2;
   if (tab === 'documents' || tab === '3') return 3;
   if (tab === 'banks' || tab === '4') return 4;
@@ -165,7 +168,7 @@ function initialDetailTab(searchParams: URLSearchParams): number {
   if (tab === 'leave' || tab === '7') return 7;
   if (tab === 'compensation' || tab === '8') return 8;
   if (tab === 'assets' || tab === '9') return 9;
-  if (tab === '1') return 1;
+  if (tab === 'account' || tab === '10') return 10;
   return 0;
 }
 
@@ -232,26 +235,26 @@ export function EmployeeDetailPage() {
       >
         <Tab
           label={tabLabel(
+            <EventNoteOutlinedIcon fontSize="small" sx={{ color: 'primary.dark' }} />,
+            'Attendance',
+          )}
+        />
+        <Tab
+          label={tabLabel(
             <PersonOutlineOutlinedIcon fontSize="small" sx={{ color: 'primary.main' }} />,
             'Employee Profile',
           )}
         />
         <Tab
           label={tabLabel(
-            <ManageAccountsRoundedIcon fontSize="small" sx={{ color: 'secondary.main' }} />,
-            'Account',
-          )}
-        />
-        <Tab
-          label={tabLabel(
             <InfoOutlinedIcon fontSize="small" sx={{ color: 'info.main' }} />,
-            'Personal Information',
+            'Personal Info',
           )}
         />
         <Tab
           label={tabLabel(
             <FolderOutlinedIcon fontSize="small" sx={{ color: 'warning.main' }} />,
-            'Documents',
+            'Docs',
             missing.has('documents'),
           )}
         />
@@ -296,9 +299,26 @@ export function EmployeeDetailPage() {
             'Assets',
           )}
         />
+        <Tab
+          icon={<SettingsOutlinedIcon fontSize="small" />}
+          aria-label="Account"
+          title="Account"
+          sx={{ minWidth: 48, ml: { md: 'auto' } }}
+        />
       </Tabs>
 
       {tab === 0 ? (
+        <EmployeeAttendanceTab
+          employeeId={employee.id}
+          companyId={employee.company_id}
+          employeeName={employee.full_name}
+          workScheduleId={employee.work_schedule_id}
+          effectiveWorkScheduleId={employee.effective_defaults?.work_schedule?.id}
+          policyId={employee.effective_defaults?.policy?.id ?? employee.policy_id}
+        />
+      ) : null}
+
+      {tab === 1 ? (
         <Stack spacing={2.5}>
       <Card variant="outlined">
         <CardHeader
@@ -476,10 +496,6 @@ export function EmployeeDetailPage() {
         </Stack>
       ) : null}
 
-      {tab === 1 ? (
-        <EmployeeAccountTab employee={employee} canManage={canManageAccount} />
-      ) : null}
-
       {tab === 2 ? (
         <EmployeePersonalInformationTab employee={employee} canEdit={canUpdate} />
       ) : null}
@@ -518,6 +534,10 @@ export function EmployeeDetailPage() {
 
       {tab === 9 ? (
         <EmployeeAssetsTab employeeId={employee.id} canManage={canManageAssets} />
+      ) : null}
+
+      {tab === 10 ? (
+        <EmployeeAccountTab employee={employee} canManage={canManageAccount} />
       ) : null}
     </Stack>
   );

@@ -10,7 +10,9 @@ import type {
 export const mastersKeys = {
   locations: (companyId?: number) => ['admin', 'locations', { companyId }] as const,
   schedules: (companyId?: number) => ['admin', 'work-schedules', { companyId }] as const,
+  schedule: (id: number) => ['admin', 'work-schedules', 'detail', id] as const,
   policies: (companyId?: number) => ['admin', 'policies', { companyId }] as const,
+  policy: (id: number) => ['admin', 'policies', 'detail', id] as const,
 };
 
 function requireToken(token: string | null): string {
@@ -38,12 +40,31 @@ export function useWorkSchedulesQuery(companyId?: number, enabled = true) {
   });
 }
 
+export function useWorkScheduleQuery(id?: number | null, enabled = true) {
+  const { token } = useAdminSession();
+  return useQuery({
+    queryKey: mastersKeys.schedule(id ?? 0),
+    enabled: enabled && Boolean(token) && Boolean(id),
+    queryFn: () =>
+      mastersService.getWorkSchedule(requireToken(token), id as number),
+  });
+}
+
 export function usePoliciesQuery(companyId?: number, enabled = true) {
   const { token } = useAdminSession();
   return useQuery({
     queryKey: mastersKeys.policies(companyId),
     enabled: enabled && Boolean(token),
     queryFn: () => mastersService.listPolicies(requireToken(token), companyId),
+  });
+}
+
+export function usePolicyQuery(id?: number | null, enabled = true) {
+  const { token } = useAdminSession();
+  return useQuery({
+    queryKey: mastersKeys.policy(id ?? 0),
+    enabled: enabled && Boolean(token) && Boolean(id),
+    queryFn: () => mastersService.getPolicy(requireToken(token), id as number),
   });
 }
 

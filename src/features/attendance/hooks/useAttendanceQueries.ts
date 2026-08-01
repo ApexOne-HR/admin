@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
 import * as attendanceService from '../services/attendance.service';
 import type {
+  AttendanceBulkCreatePayload,
   AttendanceCreatePayload,
   AttendanceListParams,
   AttendanceReasonPayload,
@@ -56,6 +57,26 @@ export function useCreateAttendanceRecordMutation() {
       attendanceService.createAttendanceRecord(requireToken(token), payload),
     onSuccess: async (record) => {
       queryClient.setQueryData(attendanceKeys.detail(record.id), record);
+      await queryClient.invalidateQueries({ queryKey: attendanceKeys.all });
+    },
+  });
+}
+
+export function useBulkCreateAttendanceRecordsMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AttendanceBulkCreatePayload) =>
+      attendanceService.bulkCreateAttendanceRecords(
+        requireToken(token),
+        employeeId,
+        payload,
+      ),
+    onSuccess: async (result) => {
+      for (const record of result.created) {
+        queryClient.setQueryData(attendanceKeys.detail(record.id), record);
+      }
       await queryClient.invalidateQueries({ queryKey: attendanceKeys.all });
     },
   });
