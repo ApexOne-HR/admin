@@ -13,6 +13,43 @@ export const ATTENDANCE_STATUS_OPTIONS: AttendanceStatus[] = [
   'incomplete',
 ];
 
+/** Create / correct UI options — leave types are hidden until Leave integration. */
+export const ATTENDANCE_ENTRY_TYPE_OPTIONS: Array<{
+  value: AttendanceEntryType;
+  label: string;
+}> = [
+  { value: 'present', label: 'Present' },
+  { value: 'absent', label: 'Absent' },
+];
+
+const LEAVE_ENTRY_TYPE_OPTIONS: Array<{
+  value: AttendanceEntryType;
+  label: string;
+}> = [
+  { value: 'full_day_leave', label: 'Full-day leave' },
+  { value: 'morning_leave', label: 'Morning Leave' },
+  { value: 'evening_leave', label: 'Evening Leave' },
+];
+
+/** Correct modal: keep current leave type visible if the record already has one. */
+export function attendanceEntryTypeOptionsForUi(
+  current?: AttendanceEntryType,
+): Array<{ value: AttendanceEntryType; label: string }> {
+  if (
+    current
+    && !ATTENDANCE_ENTRY_TYPE_OPTIONS.some((option) => option.value === current)
+  ) {
+    const currentLeave = LEAVE_ENTRY_TYPE_OPTIONS.find(
+      (option) => option.value === current,
+    );
+    if (currentLeave) {
+      return [...ATTENDANCE_ENTRY_TYPE_OPTIONS, currentLeave];
+    }
+  }
+
+  return ATTENDANCE_ENTRY_TYPE_OPTIONS;
+}
+
 export const ATTENDANCE_SOURCE_OPTIONS: AttendanceSource[] = [
   'admin',
   'mobile',

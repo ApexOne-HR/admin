@@ -231,9 +231,9 @@ export function EmployeeCompensationTab({ employeeId, companyId, canEdit }: Prop
   if (currentQuery.isLoading || historyQuery.isLoading) {
     return (
       <Card variant="outlined">
-        <CardHeader title="Compensation" sx={cardHeaderSx} />
+        <CardHeader title="Salary" sx={cardHeaderSx} />
         <CardContent>
-          <AppLoader label="Loading compensation…" />
+          <AppLoader label="Loading salary…" />
         </CardContent>
       </Card>
     );
@@ -242,7 +242,7 @@ export function EmployeeCompensationTab({ employeeId, companyId, canEdit }: Prop
   if (currentQuery.isError) {
     return (
       <Card variant="outlined">
-        <CardHeader title="Compensation" sx={cardHeaderSx} />
+        <CardHeader title="Salary" sx={cardHeaderSx} />
         <CardContent>
           <Typography color="error" variant="body2">
             {getApiErrorMessage(currentQuery.error)}

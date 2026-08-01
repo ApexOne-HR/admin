@@ -43,23 +43,13 @@ import type {
 } from '../types/attendance.type';
 import {
   attendanceEntryTypeFromRecord,
+  attendanceEntryTypeOptionsForUi,
   attendanceSourceLabel,
   attendanceStatusMeta,
   formatAttendanceDateTime,
   formatMinutes,
   localTimeFromIso,
 } from '../utils/attendance';
-
-const ATTENDANCE_TYPE_OPTIONS: Array<{
-  value: AttendanceEntryType;
-  label: string;
-}> = [
-  { value: 'present', label: 'Present' },
-  { value: 'absent', label: 'Absent' },
-  { value: 'full_day_leave', label: 'Full-day leave' },
-  { value: 'morning_leave', label: 'Morning Leave' },
-  { value: 'evening_leave', label: 'Evening Leave' },
-];
 
 function DetailGrid({ children }: { children: ReactNode }) {
   return (
@@ -539,7 +529,7 @@ export function AttendanceRecordDetailPage() {
               changeAttendanceType(event.target.value as AttendanceEntryType)
             }
           >
-            {ATTENDANCE_TYPE_OPTIONS.map((option) => (
+            {attendanceEntryTypeOptionsForUi(draft.attendanceType).map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>

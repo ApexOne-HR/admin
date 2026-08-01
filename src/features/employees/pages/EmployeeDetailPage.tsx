@@ -286,7 +286,7 @@ export function EmployeeDetailPage() {
         <Tab
           label={tabLabel(
             <PaymentsOutlinedIcon fontSize="small" sx={{ color: 'success.dark' }} />,
-            'Compensation',
+            'Salary',
             missing.has('compensation'),
           )}
         />

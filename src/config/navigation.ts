@@ -88,7 +88,7 @@ export const adminNavigation: NavigationEntry[] = [
   },
   {
     id: 'compensation',
-    label: 'Compensation',
+    label: 'Salary Structure',
     path: '/compensation',
     description: 'Allowances and deductions catalog.',
     permission: 'organizations.view',

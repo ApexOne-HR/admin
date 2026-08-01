@@ -25,17 +25,7 @@ import type {
   AttendanceCreatePayload,
   AttendanceEntryType,
 } from '../types/attendance.type';
-
-const ATTENDANCE_TYPE_OPTIONS: Array<{
-  value: AttendanceEntryType;
-  label: string;
-}> = [
-  { value: 'present', label: 'Present' },
-  { value: 'absent', label: 'Absent' },
-  { value: 'full_day_leave', label: 'Full-day leave' },
-  { value: 'morning_leave', label: 'Morning Leave' },
-  { value: 'evening_leave', label: 'Evening Leave' },
-];
+import { ATTENDANCE_ENTRY_TYPE_OPTIONS } from '../utils/attendance';
 
 function localToday(): string {
   const today = new Date();
@@ -248,7 +238,7 @@ export function AttendanceRecordCreatePage() {
                 changeAttendanceType(event.target.value as AttendanceEntryType)
               }
             >
-              {ATTENDANCE_TYPE_OPTIONS.map((option) => (
+              {ATTENDANCE_ENTRY_TYPE_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
                 </MenuItem>

@@ -87,7 +87,7 @@ export function CompensationPage() {
     return (
       <Stack spacing={2.5}>
         <PageHeader
-          title="Compensation"
+          title="Salary Structure"
           description="Company allowances and deductions catalog."
         />
         <ForbiddenAlert />
@@ -231,7 +231,7 @@ export function CompensationPage() {
   return (
     <Stack spacing={2.5}>
       <PageHeader
-        title="Compensation"
+        title="Salary Structure"
         description="Company allowances and deductions used on employee salary structures."
         action={
           canManage ? (
