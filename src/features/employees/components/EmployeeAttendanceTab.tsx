@@ -51,6 +51,7 @@ import {
   attendanceStatusMeta,
   formatAttendanceDateTime,
   formatMinutes,
+  localTimeFromIso,
 } from '@/features/attendance/utils/attendance';
 import { holidayKeys } from '@/features/holidays/hooks/useHolidaysQueries';
 import * as holidaysService from '@/features/holidays/services/holidays.service';
@@ -242,9 +243,11 @@ export function EmployeeAttendanceTab({
     companyId,
     canManage && (createOpen || bulkOpen),
   );
+  const needsScheduleContext =
+    canViewOrg && (bulkOpen || scope === 'calendar');
   const policyQuery = usePolicyQuery(
     policyId,
-    canManage && canViewOrg && bulkOpen && Boolean(policyId),
+    needsScheduleContext && Boolean(policyId),
   );
   const policy = policyQuery.data ?? null;
   // Match API: employee override → policy schedule → division/company effective default.
@@ -255,7 +258,7 @@ export function EmployeeAttendanceTab({
     ?? null;
   const scheduleQuery = useWorkScheduleQuery(
     resolvedScheduleId,
-    canManage && canViewOrg && bulkOpen && Boolean(resolvedScheduleId),
+    needsScheduleContext && Boolean(resolvedScheduleId),
   );
   const workSchedule = scheduleQuery.data ?? null;
   const holidayCalendarId = policy?.holiday_calendar_id ?? null;
@@ -303,11 +306,16 @@ export function EmployeeAttendanceTab({
 
   const holidayYears = useMemo(() => {
     const years = new Set<number>();
-    if (rangeFrom) years.add(Number(rangeFrom.slice(0, 4)));
-    if (rangeTo) years.add(Number(rangeTo.slice(0, 4)));
+    if (bulkOpen) {
+      if (rangeFrom) years.add(Number(rangeFrom.slice(0, 4)));
+      if (rangeTo) years.add(Number(rangeTo.slice(0, 4)));
+    }
+    if (scope === 'calendar') {
+      years.add(calendarYear);
+    }
     if (years.size === 0) years.add(new Date().getFullYear());
     return [...years].sort((a, b) => a - b);
-  }, [rangeFrom, rangeTo]);
+  }, [bulkOpen, calendarYear, rangeFrom, rangeTo, scope]);
 
   const holidayQueries = useQueries({
     queries: holidayYears.map((year) => ({
@@ -316,9 +324,8 @@ export function EmployeeAttendanceTab({
         year,
       }),
       enabled:
-        canManage
-        && canViewHolidays
-        && bulkOpen
+        canViewHolidays
+        && (bulkOpen || scope === 'calendar')
         && Boolean(token)
         && Boolean(holidayCalendarId),
       queryFn: () =>
@@ -337,6 +344,16 @@ export function EmployeeAttendanceTab({
       }
     }
     return dates;
+  }, [holidayQueries]);
+
+  const holidayNames = useMemo(() => {
+    const names = new Map<string, string>();
+    for (const query of holidayQueries) {
+      for (const holiday of query.data ?? []) {
+        names.set(holiday.date, holiday.name);
+      }
+    }
+    return names;
   }, [holidayQueries]);
 
   if (!canView) {
@@ -530,10 +547,16 @@ export function EmployeeAttendanceTab({
 
     try {
       const record = await createRecord.mutateAsync(payload);
+      const [year, month] = record.work_date.split('-').map(Number);
       toast.success('Attendance record created.');
       setCreateOpen(false);
       resetCreateForm();
-      navigate(`/attendance/${record.id}`);
+      setScope('calendar');
+      if (Number.isFinite(year) && Number.isFinite(month)) {
+        setCalendarYear(year);
+        setCalendarMonth(month);
+      }
+      setPage(1);
     } catch (error) {
       setFormError(getApiErrorMessage(error, 'Unable to create attendance record.'));
     }
@@ -884,10 +907,14 @@ export function EmployeeAttendanceTab({
                         ? attendanceStatusMeta(record.status)
                         : null;
                       const dayNumber = Number(date.slice(8, 10));
-
-                      return (
+                      const holidayName = holidayNames.get(date);
+                      const isHoliday = Boolean(holidayName);
+                      const isOffDay = Boolean(
+                        workingDays && !workingDays.has(weekdayKey(date)),
+                      );
+                      const mutedDay = !record && (isHoliday || isOffDay);
+                      const dayCell = (
                         <Box
-                          key={date}
                           component={record ? 'button' : 'div'}
                           type={record ? 'button' : undefined}
                           onClick={
@@ -896,12 +923,15 @@ export function EmployeeAttendanceTab({
                               : undefined
                           }
                           sx={{
+                            width: '100%',
                             minHeight: { xs: 64, sm: 88 },
                             p: 1,
                             borderRadius: 1,
                             border: '1px solid',
                             borderColor: isToday ? 'primary.main' : 'divider',
-                            bgcolor: 'background.paper',
+                            bgcolor: mutedDay
+                              ? 'action.hover'
+                              : 'background.paper',
                             textAlign: 'left',
                             cursor: record ? 'pointer' : 'default',
                             display: 'flex',
@@ -948,6 +978,41 @@ export function EmployeeAttendanceTab({
                                 />
                               ) : null}
                             </Stack>
+                          ) : isHoliday ? (
+                            <Tooltip title={holidayName ?? 'Holiday'}>
+                              <Box sx={{ mt: 'auto', alignSelf: 'flex-start', maxWidth: '100%' }}>
+                                <Chip
+                                  size="small"
+                                  label={holidayName ?? 'Holiday'}
+                                  color="secondary"
+                                  variant="outlined"
+                                  sx={{
+                                    height: 22,
+                                    maxWidth: '100%',
+                                    '& .MuiChip-label': {
+                                      px: 0.75,
+                                      fontSize: '0.7rem',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                    },
+                                  }}
+                                />
+                              </Box>
+                            </Tooltip>
+                          ) : isOffDay ? (
+                            <Chip
+                              size="small"
+                              label="Off day"
+                              variant="outlined"
+                              sx={{
+                                mt: 'auto',
+                                height: 22,
+                                alignSelf: 'flex-start',
+                                color: 'text.secondary',
+                                borderColor: 'divider',
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
                           ) : (
                             <Typography
                               variant="caption"
@@ -959,28 +1024,52 @@ export function EmployeeAttendanceTab({
                           )}
                         </Box>
                       );
+
+                      if (!record) {
+                        return <Box key={date}>{dayCell}</Box>;
+                      }
+
+                      const checkInTimeLabel =
+                        localTimeFromIso(record.check_in_at, record.timezone) || '—';
+                      const checkOutTimeLabel =
+                        localTimeFromIso(record.check_out_at, record.timezone) || '—';
+                      const checkInLocationLabel =
+                        record.check_in_location?.name ?? '—';
+                      const checkOutLocationLabel =
+                        record.check_out_location?.name ?? '—';
+
+                      return (
+                        <Tooltip
+                          key={date}
+                          arrow
+                          enterDelay={200}
+                          title={
+                            <Stack spacing={0.5} sx={{ py: 0.25 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                                {date}
+                                {statusMeta ? ` · ${statusMeta.label}` : ''}
+                              </Typography>
+                              <Typography variant="caption">
+                                Check-in: {checkInTimeLabel}
+                              </Typography>
+                              <Typography variant="caption">
+                                Check-out: {checkOutTimeLabel}
+                              </Typography>
+                              <Typography variant="caption">
+                                Check-in location: {checkInLocationLabel}
+                              </Typography>
+                              <Typography variant="caption">
+                                Check-out location: {checkOutLocationLabel}
+                              </Typography>
+                            </Stack>
+                          }
+                        >
+                          <Box sx={{ width: '100%' }}>{dayCell}</Box>
+                        </Tooltip>
+                      );
                     })}
                   </Box>
                 )}
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  useFlexGap
-                  sx={{ flexWrap: 'wrap', alignItems: 'center' }}
-                >
-                  {(['present', 'absent', 'on_leave', 'incomplete'] as const).map((status) => {
-                    const metaStatus = attendanceStatusMeta(status);
-                    return (
-                      <Chip
-                        key={status}
-                        size="small"
-                        label={metaStatus.label}
-                        color={metaStatus.color}
-                        variant="outlined"
-                      />
-                    );
-                  })}
-                </Stack>
               </Stack>
             ) : null}
 
