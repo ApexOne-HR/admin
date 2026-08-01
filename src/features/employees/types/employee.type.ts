@@ -34,7 +34,6 @@ export type Employee = {
   report_to: number | null;
   policy_id: number | null;
   work_schedule_id: number | null;
-  work_location_id: number | null;
   work_location_address: string | null;
   leave_package_id: number | null;
   employee_code: string;
@@ -104,7 +103,6 @@ export type EmployeePayload = {
   report_to?: number | null;
   policy_id: number;
   work_schedule_id: number;
-  work_location_id: number;
   work_location_address?: string | null;
   leave_package_id: number;
   employee_code: string;

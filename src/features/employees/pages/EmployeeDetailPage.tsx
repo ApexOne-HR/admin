@@ -453,13 +453,13 @@ export function EmployeeDetailPage() {
             </FormCell>
             <FormCell>
               <DetailField
-                label="Work location"
+                label="Default location (not a check-in restriction)"
                 value={formatEffective(defaults?.work_location)}
               />
             </FormCell>
             <FormCell>
               <DetailField
-                label="Work location address"
+                label="Desk / room detail"
                 value={employee.work_location_address}
               />
             </FormCell>

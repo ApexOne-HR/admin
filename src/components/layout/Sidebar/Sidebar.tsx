@@ -1,4 +1,5 @@
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
@@ -36,6 +37,7 @@ const navigationIcons: Record<NavigationItemId, typeof DashboardRoundedIcon> = {
   compensation: PaymentsRoundedIcon,
   fiscal: CalendarMonthRoundedIcon,
   employees: BadgeRoundedIcon,
+  attendance: FactCheckRoundedIcon,
   'org-chart': AccountTreeRoundedIcon,
   users: PeopleRoundedIcon,
   rbac: AdminPanelSettingsRoundedIcon,

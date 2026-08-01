@@ -27,7 +27,6 @@ import { can } from '@/features/auth/services/auth.service';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
 import { useLeavePackagesQuery } from '@/features/leave/hooks/useLeaveQueries';
 import {
-  useLocationsQuery,
   usePoliciesQuery,
   useWorkSchedulesQuery,
 } from '@/features/masters/hooks/useMastersQueries';
@@ -127,7 +126,6 @@ type FormState = {
   service_years: number;
   policy_id: number | '';
   work_schedule_id: number | '';
-  work_location_id: number | '';
   work_location_address: string;
   leave_package_id: number | '';
 };
@@ -155,7 +153,6 @@ const emptyForm: FormState = {
   service_years: 0,
   policy_id: '',
   work_schedule_id: '',
-  work_location_id: '',
   work_location_address: '',
   leave_package_id: '',
 };
@@ -173,12 +170,11 @@ function orgDefaultIds(
     default_location_id: number | null;
     default_leave_package_id: number | null;
   } | null,
-): Pick<FormState, 'policy_id' | 'work_schedule_id' | 'work_location_id' | 'leave_package_id'> {
+): Pick<FormState, 'policy_id' | 'work_schedule_id' | 'leave_package_id'> {
   return {
     policy_id: division?.default_policy_id ?? company?.default_policy_id ?? '',
     work_schedule_id:
       division?.default_work_schedule_id ?? company?.default_work_schedule_id ?? '',
-    work_location_id: division?.default_location_id ?? company?.default_location_id ?? '',
     leave_package_id:
       division?.default_leave_package_id ?? company?.default_leave_package_id ?? '',
   };
@@ -208,7 +204,6 @@ function employeeToForm(row: Employee): FormState {
     service_years: row.service_years ?? 0,
     policy_id: row.policy_id ?? '',
     work_schedule_id: row.work_schedule_id ?? '',
-    work_location_id: row.work_location_id ?? '',
     work_location_address: row.work_location_address ?? '',
     leave_package_id: row.leave_package_id ?? '',
   };
@@ -251,7 +246,6 @@ export function EmployeeFormPage() {
   );
   const policiesQuery = usePoliciesQuery(formCompanyId, allowed && Boolean(formCompanyId));
   const schedulesQuery = useWorkSchedulesQuery(formCompanyId, allowed && Boolean(formCompanyId));
-  const locationsQuery = useLocationsQuery(formCompanyId, allowed && Boolean(formCompanyId));
   const packagesQuery = useLeavePackagesQuery(formCompanyId, allowed && Boolean(formCompanyId));
 
   const createEmployee = useCreateEmployeeMutation();
@@ -272,7 +266,6 @@ export function EmployeeFormPage() {
   const managers = (formManagersQuery.data?.employees ?? []).filter((e) => e.id !== editingId);
   const policies = policiesQuery.data ?? [];
   const schedules = schedulesQuery.data ?? [];
-  const locations = locationsQuery.data ?? [];
   const packages = packagesQuery.data ?? [];
   const currentStatus = deriveEmployeeStatus({
     status: form.status || null,
@@ -300,7 +293,6 @@ export function EmployeeFormPage() {
         employment_type: form.employment_type,
         policy_id: form.policy_id,
         work_schedule_id: form.work_schedule_id,
-        work_location_id: form.work_location_id,
         leave_package_id: form.leave_package_id,
       },
       [
@@ -313,7 +305,6 @@ export function EmployeeFormPage() {
         { key: 'employment_type', label: 'Employment type' },
         { key: 'policy_id', label: 'Policy' },
         { key: 'work_schedule_id', label: 'Work schedule' },
-        { key: 'work_location_id', label: 'Work location' },
         { key: 'leave_package_id', label: 'Leave package' },
       ],
     );
@@ -344,7 +335,6 @@ export function EmployeeFormPage() {
       permanent_date: form.permanent_date || null,
       policy_id: Number(form.policy_id),
       work_schedule_id: Number(form.work_schedule_id),
-      work_location_id: Number(form.work_location_id),
       work_location_address: form.work_location_address.trim() || null,
       leave_package_id: Number(form.leave_package_id),
     };
@@ -531,7 +521,6 @@ export function EmployeeFormPage() {
                     let next = clearFieldError(c, 'division_id');
                     next = clearFieldError(next, 'policy_id');
                     next = clearFieldError(next, 'work_schedule_id');
-                    next = clearFieldError(next, 'work_location_id');
                     next = clearFieldError(next, 'leave_package_id');
                     return next;
                   });
@@ -821,33 +810,11 @@ export function EmployeeFormPage() {
             </FormCell>
             <FormCell>
               <TextField
-                select
-                label="Work location"
-                required
-                value={form.work_location_id}
-                onChange={(e) => {
-                  patchForm({
-                    work_location_id: e.target.value === '' ? '' : Number(e.target.value),
-                  });
-                  setFieldErrors((c) => clearFieldError(c, 'work_location_id'));
-                }}
-                error={Boolean(fieldErrors.work_location_id)}
-                helperText={fieldErrors.work_location_id ?? 'Used for mobile check-in'}
-                fullWidth
-                disabled={!formCompanyId}
-              >
-                {locations.map((l) => (
-                  <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
-                ))}
-              </TextField>
-            </FormCell>
-            <FormCell>
-              <TextField
-                label="Work location address (optional)"
+                label="Desk / room detail (optional)"
                 value={form.work_location_address}
                 onChange={(e) => patchForm({ work_location_address: e.target.value })}
                 fullWidth
-                helperText="Detail desk/room address, e.g. Condo A, 3 floor, room A"
+                helperText="Not a check-in restriction; employees may use any active company location"
               />
             </FormCell>
             <FormCell>

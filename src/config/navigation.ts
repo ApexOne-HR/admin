@@ -7,6 +7,7 @@ export type NavigationItemId =
   | 'fiscal'
   | 'compensation'
   | 'employees'
+  | 'attendance'
   | 'org-chart'
   | 'users'
   | 'roles'
@@ -48,6 +49,13 @@ export const adminNavigation: NavigationEntry[] = [
     path: '/employees',
     description: 'Employee directory and org placement.',
     permission: 'employees.view',
+  },
+  {
+    id: 'attendance',
+    label: 'Attendance',
+    path: '/attendance',
+    description: 'Employee attendance records.',
+    permission: 'attendance.view',
   },
   {
     id: 'org-chart',

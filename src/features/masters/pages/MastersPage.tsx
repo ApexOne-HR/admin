@@ -354,6 +354,20 @@ export function MastersPage() {
       ],
     );
 
+    if (tab === 'locations') {
+      const hasLatitude = form.latitude.trim() !== '';
+      const hasLongitude = form.longitude.trim() !== '';
+
+      if (hasLatitude !== hasLongitude) {
+        if (!hasLatitude) {
+          nextErrors.latitude = 'Latitude is required with longitude.';
+        }
+        if (!hasLongitude) {
+          nextErrors.longitude = 'Longitude is required with latitude.';
+        }
+      }
+    }
+
     if (tab === 'schedules') {
       const workingDays = form.days.filter((row) => row.is_working);
       if (workingDays.length === 0) {
@@ -491,6 +505,9 @@ export function MastersPage() {
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: 12 }}>
             {row.code ?? '—'} · {row.company?.name ?? `Company #${row.company_id}`}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: 12 }}>
+            {row.address ?? 'No address'}
           </Typography>
         </Stack>
       ),
@@ -779,6 +796,8 @@ export function MastersPage() {
                   onChange={(event) =>
                     setForm((current) => ({ ...current, latitude: event.target.value }))
                   }
+                  error={Boolean(fieldErrors.latitude)}
+                  helperText={fieldErrors.latitude}
                   fullWidth
                 />
                 <TextField
@@ -787,6 +806,8 @@ export function MastersPage() {
                   onChange={(event) =>
                     setForm((current) => ({ ...current, longitude: event.target.value }))
                   }
+                  error={Boolean(fieldErrors.longitude)}
+                  helperText={fieldErrors.longitude}
                   fullWidth
                 />
                 <TextField

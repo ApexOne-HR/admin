@@ -10,6 +10,9 @@ import { FiscalYearsPage } from '@/features/fiscal/pages/FiscalYearsPage';
 import { EmployeesPage } from '@/features/employees/pages/EmployeesPage';
 import { EmployeeFormPage } from '@/features/employees/pages/EmployeeFormPage';
 import { EmployeeDetailPage } from '@/features/employees/pages/EmployeeDetailPage';
+import { AttendanceRecordsPage } from '@/features/attendance/pages/AttendanceRecordsPage';
+import { AttendanceRecordCreatePage } from '@/features/attendance/pages/AttendanceRecordCreatePage';
+import { AttendanceRecordDetailPage } from '@/features/attendance/pages/AttendanceRecordDetailPage';
 import { PermissionsPage } from '@/features/rbac/pages/PermissionsPage';
 import { RolesPage } from '@/features/rbac/pages/RolesPage';
 import { UsersPage } from '@/features/rbac/pages/UsersPage';
@@ -50,6 +53,9 @@ export const router = createBrowserRouter([
           { path: 'employees/new', element: <EmployeeFormPage /> },
           { path: 'employees/:id/edit', element: <EmployeeFormPage /> },
           { path: 'employees/:id', element: <EmployeeDetailPage /> },
+          { path: 'attendance', element: <AttendanceRecordsPage /> },
+          { path: 'attendance/new', element: <AttendanceRecordCreatePage /> },
+          { path: 'attendance/:id', element: <AttendanceRecordDetailPage /> },
           { path: 'users', element: <UsersPage /> },
           { path: 'roles', element: <RolesPage /> },
           { path: 'permissions', element: <PermissionsPage /> },
