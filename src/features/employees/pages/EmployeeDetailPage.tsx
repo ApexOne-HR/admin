@@ -282,7 +282,7 @@ export function EmployeeDetailPage() {
         <Tab
           label={tabLabel(
             <AssignmentTurnedInOutlinedIcon fontSize="small" sx={{ color: 'success.main' }} />,
-            'Leave balances',
+            'Leave',
             missing.has('leave'),
           )}
         />

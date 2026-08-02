@@ -38,6 +38,28 @@ export async function listAttendanceRecords(
   };
 }
 
+export async function listAllAttendanceRecords(
+  token: string,
+  params: Omit<AttendanceListParams, 'page' | 'per_page'> = {},
+) {
+  const records: AttendanceRecord[] = [];
+  let page = 1;
+  let lastPage = 1;
+
+  do {
+    const result = await listAttendanceRecords(token, {
+      ...params,
+      page,
+      per_page: 100,
+    });
+    records.push(...result.records);
+    lastPage = result.meta.last_page;
+    page += 1;
+  } while (page <= lastPage);
+
+  return records;
+}
+
 export async function getAttendanceRecord(token: string, id: number) {
   const response = await apiRequest<AttendanceRecord>(`/attendance-records/${id}`, {
     token,

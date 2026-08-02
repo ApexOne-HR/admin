@@ -2,6 +2,7 @@ import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import PlaylistAddRoundedIcon from '@mui/icons-material/PlaylistAddRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import {
@@ -11,8 +12,11 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Checkbox,
   Chip,
   Divider,
+  FormControlLabel,
+  FormGroup,
   IconButton,
   Link,
   MenuItem,
@@ -53,7 +57,14 @@ import {
   formatMinutes,
   localTimeFromIso,
 } from '@/features/attendance/utils/attendance';
+import {
+  ALL_ATTENDANCE_EXPORT_COLUMN_IDS,
+  ATTENDANCE_EXPORT_COLUMNS,
+  downloadAttendanceExcel,
+  type AttendanceExportColumnId,
+} from '@/features/attendance/utils/attendanceExport';
 import { employeeAttendanceReturnState } from '@/features/attendance/utils/attendanceNavigation';
+import * as attendanceService from '@/features/attendance/services/attendance.service';
 import { holidayKeys } from '@/features/holidays/hooks/useHolidaysQueries';
 import * as holidaysService from '@/features/holidays/services/holidays.service';
 import {
@@ -195,6 +206,14 @@ export function EmployeeAttendanceTab({
   const [perPage, setPerPage] = useState(15);
   const [createOpen, setCreateOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
+  const [exportColumns, setExportColumns] = useState<AttendanceExportColumnId[]>(
+    ALL_ATTENDANCE_EXPORT_COLUMN_IDS,
+  );
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const initialMonth = useMemo(() => {
     const today = new Date();
     return { year: today.getFullYear(), month: today.getMonth() + 1 };
@@ -395,6 +414,73 @@ export function EmployeeAttendanceTab({
     resetCreateForm();
     setWorkDate(date);
     setCreateOpen(true);
+  };
+
+  const openExportModal = () => {
+    setExportFrom(calendarRange.from);
+    setExportTo(calendarRange.to);
+    setExportColumns(ALL_ATTENDANCE_EXPORT_COLUMN_IDS);
+    setExportError(null);
+    setExportOpen(true);
+  };
+
+  const toggleExportColumn = (columnId: AttendanceExportColumnId) => {
+    setExportColumns((current) =>
+      current.includes(columnId)
+        ? current.filter((id) => id !== columnId)
+        : [...current, columnId],
+    );
+  };
+
+  const handleExport = async () => {
+    setExportError(null);
+
+    if (!exportFrom || !exportTo) {
+      setExportError('Date range is required.');
+      return;
+    }
+    if (exportFrom > exportTo) {
+      setExportError('Date range is invalid (from ≤ to).');
+      return;
+    }
+    if (exportColumns.length === 0) {
+      setExportError('Select at least one column.');
+      return;
+    }
+    if (!token) {
+      setExportError('Missing admin session token.');
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const records = await attendanceService.listAllAttendanceRecords(token, {
+        employee_id: employeeId,
+        date_from: exportFrom,
+        date_to: exportTo,
+      });
+
+      if (records.length === 0) {
+        setExportError('No attendance records found for this date range.');
+        return;
+      }
+
+      downloadAttendanceExcel({
+        records,
+        columnIds: ATTENDANCE_EXPORT_COLUMNS.map((column) => column.id).filter(
+          (id) => exportColumns.includes(id),
+        ),
+        employeeName,
+        dateFrom: exportFrom,
+        dateTo: exportTo,
+      });
+      toast.success(`Exported ${records.length} attendance record${records.length === 1 ? '' : 's'}.`);
+      setExportOpen(false);
+    } catch (error) {
+      setExportError(getApiErrorMessage(error, 'Unable to export attendance.'));
+    } finally {
+      setExporting(false);
+    }
   };
 
   const resetBulkForm = () => {
@@ -752,31 +838,43 @@ export function EmployeeAttendanceTab({
           }
           sx={cardHeaderSx}
           action={
-            canManage ? (
-              <Stack direction="row" spacing={1}>
-                <Button
-                  size="small"
-                  startIcon={<AddRoundedIcon />}
-                  onClick={() => {
-                    resetCreateForm();
-                    setCreateOpen(true);
-                  }}
-                >
-                  Create
-                </Button>
+            <Stack direction="row" spacing={1}>
+              {canManage ? (
+                <>
+                  <Button
+                    size="small"
+                    startIcon={<AddRoundedIcon />}
+                    onClick={() => {
+                      resetCreateForm();
+                      setCreateOpen(true);
+                    }}
+                  >
+                    Create
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<PlaylistAddRoundedIcon />}
+                    onClick={() => {
+                      resetBulkForm();
+                      setBulkOpen(true);
+                    }}
+                  >
+                    Bulk create
+                  </Button>
+                </>
+              ) : null}
+              {canView ? (
                 <Button
                   size="small"
                   variant="outlined"
-                  startIcon={<PlaylistAddRoundedIcon />}
-                  onClick={() => {
-                    resetBulkForm();
-                    setBulkOpen(true);
-                  }}
+                  startIcon={<FileDownloadOutlinedIcon />}
+                  onClick={openExportModal}
                 >
-                  Bulk create
+                  Export
                 </Button>
-              </Stack>
-            ) : undefined
+              ) : null}
+            </Stack>
           }
         />
         <CardContent>
@@ -1452,6 +1550,95 @@ export function EmployeeAttendanceTab({
               </Stack>
             </Alert>
           ) : null}
+        </Stack>
+      </AppModal>
+
+      <AppModal
+        open={exportOpen}
+        title="Export attendance"
+        description={`Download Excel for ${employeeName}. Defaults to the active calendar month; adjust the range and columns as needed.`}
+        onClose={() => setExportOpen(false)}
+        maxWidth="md"
+        actions={
+          <>
+            <Button onClick={() => setExportOpen(false)} disabled={exporting}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => void handleExport()}
+              disabled={exporting}
+              startIcon={<FileDownloadOutlinedIcon />}
+            >
+              {exporting ? 'Exporting…' : 'Download Excel'}
+            </Button>
+          </>
+        }
+      >
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          {exportError ? <Alert severity="error">{exportError}</Alert> : null}
+
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
+              required
+              fullWidth
+              type="date"
+              label="From"
+              value={exportFrom}
+              onChange={(event) => setExportFrom(event.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextField
+              required
+              fullWidth
+              type="date"
+              label="To"
+              value={exportTo}
+              onChange={(event) => setExportTo(event.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+          </Stack>
+
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+          >
+            <Typography variant="subtitle2">Columns</Typography>
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                onClick={() => setExportColumns(ALL_ATTENDANCE_EXPORT_COLUMN_IDS)}
+              >
+                Select all
+              </Button>
+              <Button size="small" onClick={() => setExportColumns([])}>
+                Clear
+              </Button>
+            </Stack>
+          </Stack>
+
+          <FormGroup
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              gap: 0.5,
+            }}
+          >
+            {ATTENDANCE_EXPORT_COLUMNS.map((column) => (
+              <FormControlLabel
+                key={column.id}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={exportColumns.includes(column.id)}
+                    onChange={() => toggleExportColumn(column.id)}
+                  />
+                }
+                label={column.label}
+              />
+            ))}
+          </FormGroup>
         </Stack>
       </AppModal>
     </Stack>
