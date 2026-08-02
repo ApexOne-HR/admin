@@ -45,18 +45,18 @@ export const adminNavigation: NavigationEntry[] = [
     description: 'Overview of HR operations and admin activity.',
   },
   {
-    id: 'employees',
-    label: 'Employees',
-    path: '/employees',
-    description: 'Employee directory and org placement.',
-    permission: 'employees.view',
-  },
-  {
     id: 'attendance',
     label: 'Attendance',
     path: '/attendance',
     description: 'Employee attendance records.',
     permission: 'attendance.view',
+  },
+  {
+    id: 'employees',
+    label: 'Employees',
+    path: '/employees',
+    description: 'Employee directory and org placement.',
+    permission: 'employees.view',
   },
   {
     id: 'org-chart',
@@ -67,16 +67,16 @@ export const adminNavigation: NavigationEntry[] = [
   },
   {
     id: 'leave',
-    label: 'Leave',
+    label: 'Leave structure',
     path: '/leave',
     description: 'Leave types and packages.',
     permission: 'organizations.view',
   },
   {
-    id: 'masters',
-    label: 'Masters',
-    path: '/masters',
-    description: 'Locations, work schedules, and policies.',
+    id: 'compensation',
+    label: 'Salary Structure',
+    path: '/compensation',
+    description: 'Allowances and deductions catalog.',
     permission: 'organizations.view',
   },
   {
@@ -87,17 +87,10 @@ export const adminNavigation: NavigationEntry[] = [
     permission: 'holidays.view',
   },
   {
-    id: 'compensation',
-    label: 'Salary Structure',
-    path: '/compensation',
-    description: 'Allowances and deductions catalog.',
-    permission: 'organizations.view',
-  },
-  {
-    id: 'organization',
-    label: 'Organization',
-    path: '/organization',
-    description: 'Companies, divisions, departments, and designations.',
+    id: 'masters',
+    label: 'Masters',
+    path: '/masters',
+    description: 'Locations, work schedules, and policies.',
     permission: 'organizations.view',
   },
   {
@@ -108,16 +101,23 @@ export const adminNavigation: NavigationEntry[] = [
     permission: 'organizations.view',
   },
   {
-    id: 'users',
-    label: 'Users',
-    path: '/users',
-    description: 'Assign roles and data scopes to users.',
-    permission: 'users.view',
+    id: 'organization',
+    label: 'Organization',
+    path: '/organization',
+    description: 'Companies, divisions, departments, and designations.',
+    permission: 'organizations.view',
   },
   {
     id: 'rbac',
     label: 'RBAC',
     children: [
+      {
+        id: 'users',
+        label: 'Users',
+        path: '/users',
+        description: 'Assign roles and data scopes to users.',
+        permission: 'users.view',
+      },
       {
         id: 'roles',
         label: 'Roles',

@@ -14,6 +14,7 @@ import { AttendanceRecordsPage } from '@/features/attendance/pages/AttendanceRec
 import { AttendanceRecordCreatePage } from '@/features/attendance/pages/AttendanceRecordCreatePage';
 import { AttendanceRecordDetailPage } from '@/features/attendance/pages/AttendanceRecordDetailPage';
 import { AuditLogsPage } from '@/features/audit/pages/AuditLogsPage';
+import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { PermissionsPage } from '@/features/rbac/pages/PermissionsPage';
 import { RolesPage } from '@/features/rbac/pages/RolesPage';
 import { UsersPage } from '@/features/rbac/pages/UsersPage';
@@ -34,15 +35,7 @@ export const router = createBrowserRouter([
         element: <AdminLayout />,
         children: [
           { index: true, element: <Navigate to="/dashboard" replace /> },
-          {
-            path: 'dashboard',
-            element: (
-              <ComingSoonPage
-                title="Dashboard"
-                description="Overview of HR operations and admin activity."
-              />
-            ),
-          },
+          { path: 'dashboard', element: <DashboardPage /> },
           { path: 'organization', element: <OrganizationPage /> },
           { path: 'org-chart', element: <OrgChartPage /> },
           { path: 'masters', element: <MastersPage /> },

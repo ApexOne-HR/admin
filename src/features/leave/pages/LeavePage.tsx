@@ -127,7 +127,7 @@ export function LeavePage() {
   if (!canView) {
     return (
       <Stack spacing={2.5}>
-        <PageHeader title="Leave" description="Leave types and packages." />
+        <PageHeader title="Leave structure" description="Leave types and packages." />
         <ForbiddenAlert />
       </Stack>
     );
@@ -367,7 +367,7 @@ export function LeavePage() {
   return (
     <Stack spacing={2.5}>
       <PageHeader
-        title="Leave"
+        title="Leave structure"
         description="Leave types and packages (e.g. Standard = 10 Annual + 6 Casual)."
         action={
           canManage ? (
