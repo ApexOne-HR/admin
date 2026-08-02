@@ -1,6 +1,8 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import {
   Alert,
+  Autocomplete,
+  Box,
   Button,
   Card,
   CardContent,
@@ -9,13 +11,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader/PageHeader';
 import { useToast } from '@/components/common/feedback/ToastProvider';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
 import { can } from '@/features/auth/services/auth.service';
 import { useEmployeesQuery } from '@/features/employees/hooks/useEmployeeQueries';
+import type { Employee } from '@/features/employees/types/employee.type';
 import { useLocationsQuery } from '@/features/masters/hooks/useMastersQueries';
 import { useCompaniesQuery } from '@/features/organization/hooks/useOrganizationQueries';
 import { ForbiddenAlert } from '@/features/rbac/components/RbacShared';
@@ -46,6 +49,13 @@ function defaultTimes(type: AttendanceEntryType) {
   return { checkIn: '09:00', checkOut: '17:00' };
 }
 
+function employeeOptionLabel(employee: Employee): string {
+  const email = employee.email?.trim();
+  return email
+    ? `${employee.employee_code} · ${employee.full_name} · ${email}`
+    : `${employee.employee_code} · ${employee.full_name}`;
+}
+
 export function AttendanceRecordCreatePage() {
   const { session } = useAdminSession();
   const navigate = useNavigate();
@@ -53,7 +63,9 @@ export function AttendanceRecordCreatePage() {
   const canCreate = can(session?.user, 'attendance.manage');
   const createRecord = useCreateAttendanceRecordMutation();
   const [companyId, setCompanyId] = useState<number | ''>('');
-  const [employeeId, setEmployeeId] = useState<number | ''>('');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [employeeInput, setEmployeeInput] = useState('');
+  const deferredEmployeeQ = useDeferredValue(employeeInput.trim());
   const [workDate, setWorkDate] = useState(localToday());
   const [attendanceType, setAttendanceType] =
     useState<AttendanceEntryType>('present');
@@ -68,8 +80,9 @@ export function AttendanceRecordCreatePage() {
   const employeesQuery = useEmployeesQuery(
     {
       company_id: companyId === '' ? undefined : companyId,
+      q: deferredEmployeeQ || undefined,
       page: 1,
-      per_page: 100,
+      per_page: 50,
     },
     canCreate && companyId !== '',
   );
@@ -91,6 +104,10 @@ export function AttendanceRecordCreatePage() {
   }
 
   const employees = employeesQuery.data?.employees ?? [];
+  const employeeOptions =
+    selectedEmployee && !employees.some((employee) => employee.id === selectedEmployee.id)
+      ? [selectedEmployee, ...employees]
+      : employees;
   const locations = (locationsQuery.data ?? []).filter((location) => location.is_active);
   const requiresPunch =
     attendanceType !== 'absent' && attendanceType !== 'full_day_leave';
@@ -110,7 +127,7 @@ export function AttendanceRecordCreatePage() {
   const handleSubmit = async () => {
     setFormError(null);
 
-    if (companyId === '' || employeeId === '' || workDate === '') {
+    if (companyId === '' || !selectedEmployee || workDate === '') {
       setFormError('Company, employee, and work date are required.');
       return;
     }
@@ -120,7 +137,7 @@ export function AttendanceRecordCreatePage() {
     }
 
     const payload: AttendanceCreatePayload = {
-      employee_id: employeeId,
+      employee_id: selectedEmployee.id,
       work_date: workDate,
       attendance_type: attendanceType,
       reason: reason.trim() || null,
@@ -170,18 +187,30 @@ export function AttendanceRecordCreatePage() {
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               Employee and date
             </Typography>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  md: 'minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr)',
+                },
+                alignItems: 'start',
+              }}
+            >
               <TextField
                 select
                 required
                 fullWidth
                 label="Company"
                 value={companyId}
+                helperText=" "
                 onChange={(event) => {
                   setCompanyId(
                     event.target.value === '' ? '' : Number(event.target.value),
                   );
-                  setEmployeeId('');
+                  setSelectedEmployee(null);
+                  setEmployeeInput('');
                   setCheckInLocationId('');
                   setCheckOutLocationId('');
                 }}
@@ -192,25 +221,67 @@ export function AttendanceRecordCreatePage() {
                   </MenuItem>
                 ))}
               </TextField>
-              <TextField
-                select
-                required
+              <Autocomplete
                 fullWidth
-                label="Employee"
-                value={employeeId}
                 disabled={companyId === ''}
-                onChange={(event) =>
-                  setEmployeeId(
-                    event.target.value === '' ? '' : Number(event.target.value),
-                  )
-                }
-              >
-                {employees.map((employee) => (
-                  <MenuItem key={employee.id} value={employee.id}>
-                    {employee.employee_code} · {employee.full_name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                options={employeeOptions}
+                value={selectedEmployee}
+                inputValue={employeeInput}
+                loading={employeesQuery.isFetching}
+                filterOptions={(options) => options}
+                getOptionLabel={employeeOptionLabel}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                onChange={(_event, value) => {
+                  setSelectedEmployee(value);
+                  if (value) {
+                    setEmployeeInput(employeeOptionLabel(value));
+                  }
+                }}
+                onInputChange={(_event, value, reason) => {
+                  if (reason === 'input' || reason === 'clear') {
+                    setEmployeeInput(value);
+                    if (reason === 'clear') {
+                      setSelectedEmployee(null);
+                    }
+                  }
+                }}
+                renderOption={(props, option) => {
+                  const { key, ...optionProps } = props as typeof props & {
+                    key?: string | number;
+                  };
+                  return (
+                    <Box
+                      component="li"
+                      key={key ?? option.id}
+                      {...optionProps}
+                      sx={{
+                        flexDirection: 'column',
+                        alignItems: 'flex-start !important',
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {option.employee_code} · {option.full_name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {option.email?.trim() || 'No email'}
+                      </Typography>
+                    </Box>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    required
+                    label="Employee"
+                    placeholder="Search name, code, or email"
+                    helperText={
+                      companyId === ''
+                        ? 'Select a company first'
+                        : 'Search by employee name, code, or email'
+                    }
+                  />
+                )}
+              />
               <TextField
                 required
                 fullWidth
@@ -218,12 +289,13 @@ export function AttendanceRecordCreatePage() {
                 label="Work date"
                 value={workDate}
                 onChange={(event) => setWorkDate(event.target.value)}
+                helperText=" "
                 slotProps={{
                   inputLabel: { shrink: true },
                   htmlInput: { max: localToday() },
                 }}
               />
-            </Stack>
+            </Box>
 
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               Attendance
@@ -237,6 +309,7 @@ export function AttendanceRecordCreatePage() {
               onChange={(event) =>
                 changeAttendanceType(event.target.value as AttendanceEntryType)
               }
+              sx={{ maxWidth: { md: 'calc(50% - 8px)' } }}
             >
               {ATTENDANCE_ENTRY_TYPE_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -246,71 +319,75 @@ export function AttendanceRecordCreatePage() {
             </TextField>
 
             {requiresPunch ? (
-              <>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    required
-                    fullWidth
-                    type="time"
-                    label="Check-in time"
-                    value={checkInTime}
-                    onChange={(event) => setCheckInTime(event.target.value)}
-                    slotProps={{ inputLabel: { shrink: true } }}
-                  />
-                  <TextField
-                    fullWidth
-                    type="time"
-                    label="Check-out time"
-                    value={checkOutTime}
-                    onChange={(event) => setCheckOutTime(event.target.value)}
-                    helperText="Leave empty to create an Incomplete record"
-                    slotProps={{ inputLabel: { shrink: true } }}
-                  />
-                </Stack>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Check-in location (optional)"
-                    value={checkInLocationId}
-                    disabled={companyId === ''}
-                    onChange={(event) => {
-                      const value =
-                        event.target.value === '' ? '' : Number(event.target.value);
-                      setCheckInLocationId(value);
-                      if (checkOutLocationId === '') {
-                        setCheckOutLocationId(value);
-                      }
-                    }}
-                  >
-                    <MenuItem value="">None</MenuItem>
-                    {locations.map((location) => (
-                      <MenuItem key={location.id} value={location.id}>
-                        {location.name} · {location.address ?? 'No address'}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Check-out location (optional)"
-                    value={checkOutLocationId}
-                    disabled={companyId === '' || checkOutTime === ''}
-                    onChange={(event) =>
-                      setCheckOutLocationId(
-                        event.target.value === '' ? '' : Number(event.target.value),
-                      )
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  alignItems: 'start',
+                }}
+              >
+                <TextField
+                  required
+                  fullWidth
+                  type="time"
+                  label="Check-in time"
+                  value={checkInTime}
+                  onChange={(event) => setCheckInTime(event.target.value)}
+                  helperText=" "
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+                <TextField
+                  fullWidth
+                  type="time"
+                  label="Check-out time"
+                  value={checkOutTime}
+                  onChange={(event) => setCheckOutTime(event.target.value)}
+                  helperText="Leave empty to create an Incomplete record"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+                <TextField
+                  select
+                  fullWidth
+                  label="Check-in location (optional)"
+                  value={checkInLocationId}
+                  disabled={companyId === ''}
+                  onChange={(event) => {
+                    const value =
+                      event.target.value === '' ? '' : Number(event.target.value);
+                    setCheckInLocationId(value);
+                    if (checkOutLocationId === '') {
+                      setCheckOutLocationId(value);
                     }
-                  >
-                    <MenuItem value="">None</MenuItem>
-                    {locations.map((location) => (
-                      <MenuItem key={location.id} value={location.id}>
-                        {location.name} · {location.address ?? 'No address'}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Stack>
-              </>
+                  }}
+                >
+                  <MenuItem value="">None</MenuItem>
+                  {locations.map((location) => (
+                    <MenuItem key={location.id} value={location.id}>
+                      {location.name} · {location.address ?? 'No address'}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  fullWidth
+                  label="Check-out location (optional)"
+                  value={checkOutLocationId}
+                  disabled={companyId === '' || checkOutTime === ''}
+                  onChange={(event) =>
+                    setCheckOutLocationId(
+                      event.target.value === '' ? '' : Number(event.target.value),
+                    )
+                  }
+                >
+                  <MenuItem value="">None</MenuItem>
+                  {locations.map((location) => (
+                    <MenuItem key={location.id} value={location.id}>
+                      {location.name} · {location.address ?? 'No address'}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
             ) : (
               <Alert severity="info">
                 Punch time and location are not recorded for absent or full-day leave.
@@ -320,7 +397,7 @@ export function AttendanceRecordCreatePage() {
             <TextField
               fullWidth
               multiline
-              minRows={2}
+              minRows={3}
               label="Reason / note (optional)"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
