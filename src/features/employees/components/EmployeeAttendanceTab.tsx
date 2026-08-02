@@ -53,6 +53,7 @@ import {
   formatMinutes,
   localTimeFromIso,
 } from '@/features/attendance/utils/attendance';
+import { employeeAttendanceReturnState } from '@/features/attendance/utils/attendanceNavigation';
 import { holidayKeys } from '@/features/holidays/hooks/useHolidaysQueries';
 import * as holidaysService from '@/features/holidays/services/holidays.service';
 import {
@@ -390,6 +391,12 @@ export function EmployeeAttendanceTab({
     setFormError(null);
   };
 
+  const openCreateForDate = (date: string) => {
+    resetCreateForm();
+    setWorkDate(date);
+    setCreateOpen(true);
+  };
+
   const resetBulkForm = () => {
     setBulkDates([]);
     setRangeFrom(monthRange.from);
@@ -635,6 +642,7 @@ export function EmployeeAttendanceTab({
         <Link
           component={RouterLink}
           to={`/attendance/${row.id}`}
+          state={employeeAttendanceReturnState(employeeId)}
           underline="hover"
           color="inherit"
           sx={{ fontWeight: 600 }}
@@ -717,7 +725,11 @@ export function EmployeeAttendanceTab({
           <IconButton
             size="small"
             aria-label="View attendance"
-            onClick={() => navigate(`/attendance/${row.id}`)}
+            onClick={() =>
+              navigate(`/attendance/${row.id}`, {
+                state: employeeAttendanceReturnState(employeeId),
+              })
+            }
           >
             <VisibilityRoundedIcon fontSize="small" />
           </IconButton>
@@ -913,14 +925,29 @@ export function EmployeeAttendanceTab({
                         workingDays && !workingDays.has(weekdayKey(date)),
                       );
                       const mutedDay = !record && (isHoliday || isOffDay);
+                      const canCreateOnDate =
+                        canManage
+                        && !record
+                        && !isHoliday
+                        && !isOffDay
+                        && date <= today;
+                      const handleDayClick = () => {
+                        if (record) {
+                          navigate(`/attendance/${record.id}`, {
+                            state: employeeAttendanceReturnState(employeeId),
+                          });
+                          return;
+                        }
+                        if (canCreateOnDate) {
+                          openCreateForDate(date);
+                        }
+                      };
                       const dayCell = (
                         <Box
-                          component={record ? 'button' : 'div'}
-                          type={record ? 'button' : undefined}
+                          component={record || canCreateOnDate ? 'button' : 'div'}
+                          type={record || canCreateOnDate ? 'button' : undefined}
                           onClick={
-                            record
-                              ? () => navigate(`/attendance/${record.id}`)
-                              : undefined
+                            record || canCreateOnDate ? handleDayClick : undefined
                           }
                           sx={{
                             width: '100%',
@@ -933,14 +960,16 @@ export function EmployeeAttendanceTab({
                               ? 'action.hover'
                               : 'background.paper',
                             textAlign: 'left',
-                            cursor: record ? 'pointer' : 'default',
+                            cursor:
+                              record || canCreateOnDate ? 'pointer' : 'default',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 0.75,
                             transition: 'background-color 120ms ease, border-color 120ms ease',
-                            '&:hover': record
-                              ? { bgcolor: 'action.hover', borderColor: 'primary.light' }
-                              : undefined,
+                            '&:hover':
+                              record || canCreateOnDate
+                                ? { bgcolor: 'action.hover', borderColor: 'primary.light' }
+                                : undefined,
                           }}
                         >
                           <Typography
@@ -1026,6 +1055,19 @@ export function EmployeeAttendanceTab({
                       );
 
                       if (!record) {
+                        if (canCreateOnDate) {
+                          return (
+                            <Tooltip
+                              key={date}
+                              arrow
+                              enterDelay={200}
+                              title="Create attendance"
+                            >
+                              <Box sx={{ width: '100%' }}>{dayCell}</Box>
+                            </Tooltip>
+                          );
+                        }
+
                         return <Box key={date}>{dayCell}</Box>;
                       }
 

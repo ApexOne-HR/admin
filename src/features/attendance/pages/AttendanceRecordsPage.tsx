@@ -42,6 +42,7 @@ import {
   formatAttendanceDateTime,
   formatMinutes,
 } from '../utils/attendance';
+import { attendanceListReturnState } from '../utils/attendanceNavigation';
 
 function localDate(year: number, month: number, day: number): string {
   return [
@@ -153,6 +154,7 @@ export function AttendanceRecordsPage() {
           <Link
             component={RouterLink}
             to={`/attendance/${row.id}`}
+            state={attendanceListReturnState()}
             underline="hover"
             color="inherit"
             sx={{ fontWeight: 600 }}
@@ -270,7 +272,11 @@ export function AttendanceRecordsPage() {
           <IconButton
             size="small"
             aria-label="View attendance"
-            onClick={() => navigate(`/attendance/${row.id}`)}
+            onClick={() =>
+              navigate(`/attendance/${row.id}`, {
+                state: attendanceListReturnState(),
+              })
+            }
           >
             <VisibilityRoundedIcon fontSize="small" />
           </IconButton>

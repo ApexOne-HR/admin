@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useParams } from 'react-router-dom';
 import { AppLoader } from '@/components/common/AppLoader';
 import { AppModal } from '@/components/common/AppModal';
 import { useToast } from '@/components/common/feedback/ToastProvider';
@@ -50,6 +50,7 @@ import {
   formatMinutes,
   localTimeFromIso,
 } from '../utils/attendance';
+import { resolveAttendanceDetailBack } from '../utils/attendanceNavigation';
 
 function DetailGrid({ children }: { children: ReactNode }) {
   return (
@@ -135,6 +136,7 @@ function draftFromRecord(record: AttendanceRecord) {
 
 export function AttendanceRecordDetailPage() {
   const { id } = useParams();
+  const location = useLocation();
   const recordId = Number(id);
   const toast = useToast();
   const { session } = useAdminSession();
@@ -164,6 +166,10 @@ export function AttendanceRecordDetailPage() {
   });
 
   const record = recordQuery.data;
+  const backLink = resolveAttendanceDetailBack(
+    location.state,
+    record?.employee_id,
+  );
   const locationsQuery = useLocationsQuery(
     record?.company_id,
     canManage && correctOpen && Boolean(record?.company_id),
@@ -196,7 +202,11 @@ export function AttendanceRecordDetailPage() {
           title="Attendance record"
           description="Attendance record details."
           action={
-            <Button component={RouterLink} to="/attendance" startIcon={<ArrowBackRoundedIcon />}>
+            <Button
+              component={RouterLink}
+              to={backLink.returnTo}
+              startIcon={<ArrowBackRoundedIcon />}
+            >
               Back
             </Button>
           }
@@ -345,8 +355,12 @@ export function AttendanceRecordDetailPage() {
                 Restore
               </Button>
             ) : null}
-            <Button component={RouterLink} to="/attendance" startIcon={<ArrowBackRoundedIcon />}>
-              Back to attendance
+            <Button
+              component={RouterLink}
+              to={backLink.returnTo}
+              startIcon={<ArrowBackRoundedIcon />}
+            >
+              {backLink.returnLabel}
             </Button>
           </Stack>
         }
