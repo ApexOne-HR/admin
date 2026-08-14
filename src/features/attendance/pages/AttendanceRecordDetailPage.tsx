@@ -385,6 +385,9 @@ export function AttendanceRecordDetailPage() {
             }
           />
         ) : null}
+        {record.absence_session_label && record.absence_session !== 'full' ? (
+          <Chip color="warning" variant="outlined" label={record.absence_session_label} />
+        ) : null}
         <Chip label={attendanceSourceLabel(record.source)} variant="outlined" />
         {record.is_voided ? <Chip label="Voided" color="error" /> : null}
       </Stack>
@@ -476,6 +479,7 @@ export function AttendanceRecordDetailPage() {
             }
           />
           <DetailField label="Leave session" value={record.leave_session_label} />
+          <DetailField label="Absence session" value={record.absence_session_label} />
           <DetailField label="Worked" value={formatMinutes(record.worked_minutes)} />
           <DetailField label="Late" value={formatMinutes(record.late_minutes)} />
           <DetailField label="Early leave" value={formatMinutes(record.early_leave_minutes)} />

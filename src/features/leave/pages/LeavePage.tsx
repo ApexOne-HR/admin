@@ -4,6 +4,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import {
   Box,
   Button,
+  Checkbox,
   FormControlLabel,
   IconButton,
   MenuItem,
@@ -53,8 +54,19 @@ type LeaveTab = 'types' | 'packages';
 
 type ItemDraft = {
   leave_type_id: number | '';
+  min_service_years: string;
+  max_service_years: string;
   days_allowed: string;
+  prorate_joining_year: boolean;
 };
+
+const emptyItem = (): ItemDraft => ({
+  leave_type_id: '',
+  min_service_years: '0',
+  max_service_years: '',
+  days_allowed: '',
+  prorate_joining_year: false,
+});
 
 type FormState = {
   company_id: number | '';
@@ -63,10 +75,10 @@ type FormState = {
   is_paid: boolean;
   is_active: boolean;
   allowed_in_probation: boolean;
-  min_service_years: string;
   allow_half_day: boolean;
   allowed_gender: '' | 'male' | 'female';
   min_notice_days: string;
+  max_late_request_days: string;
   items: ItemDraft[];
 };
 
@@ -77,10 +89,10 @@ const emptyForm: FormState = {
   is_paid: true,
   is_active: true,
   allowed_in_probation: true,
-  min_service_years: '0',
   allow_half_day: false,
   allowed_gender: '',
   min_notice_days: '0',
+  max_late_request_days: '0',
   items: [],
 };
 
@@ -155,10 +167,10 @@ export function LeavePage() {
       is_paid: row.is_paid,
       is_active: row.is_active,
       allowed_in_probation: row.allowed_in_probation,
-      min_service_years: String(row.min_service_years ?? 0),
       allow_half_day: row.allow_half_day,
       allowed_gender: row.allowed_gender ?? '',
       min_notice_days: String(row.min_notice_days ?? 0),
+      max_late_request_days: String(row.max_late_request_days ?? 0),
     });
     setFormError(null);
     setFieldErrors({});
@@ -175,7 +187,12 @@ export function LeavePage() {
       is_active: row.is_active,
       items: (row.items ?? []).map((item) => ({
         leave_type_id: item.leave_type_id,
+        min_service_years: String(item.min_service_years ?? 0),
+        max_service_years: item.max_service_years === null || item.max_service_years === undefined
+          ? ''
+          : String(item.max_service_years),
         days_allowed: String(item.days_allowed),
+        prorate_joining_year: Boolean(item.prorate_joining_year),
       })),
     });
     setFormError(null);
@@ -208,10 +225,10 @@ export function LeavePage() {
           is_paid: form.is_paid,
           is_active: form.is_active,
           allowed_in_probation: form.allowed_in_probation,
-          min_service_years: Number(form.min_service_years) || 0,
           allow_half_day: form.allow_half_day,
           allowed_gender: form.allowed_gender || null,
           min_notice_days: Number(form.min_notice_days) || 0,
+          max_late_request_days: Number(form.max_late_request_days) || 0,
         };
         if (editingId) {
           await updateType.mutateAsync({ id: editingId, payload });
@@ -225,7 +242,10 @@ export function LeavePage() {
           .filter((item) => item.leave_type_id !== '' && item.days_allowed.trim() !== '')
           .map((item) => ({
             leave_type_id: Number(item.leave_type_id),
+            min_service_years: Number(item.min_service_years) || 0,
+            max_service_years: item.max_service_years.trim() === '' ? null : Number(item.max_service_years),
             days_allowed: Number(item.days_allowed),
+            prorate_joining_year: item.prorate_joining_year,
           }));
 
         if (items.some((item) => !(item.days_allowed > 0))) {
@@ -294,11 +314,6 @@ export function LeavePage() {
       render: (row) => (row.allowed_in_probation ? 'Allowed' : 'Blocked'),
     },
     {
-      key: 'service',
-      header: 'Min years',
-      render: (row) => String(row.min_service_years ?? 0),
-    },
-    {
       key: 'unit',
       header: 'Day unit',
       render: (row) => (row.allow_half_day ? 'Full / Half' : 'Full'),
@@ -337,7 +352,11 @@ export function LeavePage() {
       header: 'Items',
       render: (row) =>
         (row.items ?? [])
-          .map((item) => `${item.leave_type?.name ?? item.leave_type_id}: ${item.days_allowed}d`)
+          .map((item) => {
+            const typeName = item.leave_type?.name ?? String(item.leave_type_id);
+            const max = item.max_service_years === null ? '+' : `–${item.max_service_years}`;
+            return `${typeName} ${item.min_service_years}${max}y: ${item.days_allowed}d`;
+          })
           .join(' · ') || '—',
     },
     {
@@ -413,7 +432,7 @@ export function LeavePage() {
       <AppModal
         open={formOpen}
         onClose={() => setFormOpen(false)}
-        maxWidth="lg"
+        maxWidth={tab === 'packages' ? 'xl' : 'md'}
         title={editingId ? `Edit ${tabTitle}` : `Add ${tabTitle}`}
         actions={
           <>
@@ -479,19 +498,8 @@ export function LeavePage() {
             {tab === 'types' ? (
               <>
                 <Typography variant="subtitle2" sx={{ gridColumn: { md: '1 / -1' }, mt: 1 }}>
-                  Eligibility
+                  Request rules
                 </Typography>
-                <TextField
-                  label="Min service years"
-                  type="number"
-                  value={form.min_service_years}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, min_service_years: event.target.value }))
-                  }
-                  fullWidth
-                  helperText="0 = no wait. Example: 1 = after 1 service year"
-                  slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
-                />
                 <TextField
                   select
                   label="Allowed gender"
@@ -509,9 +517,6 @@ export function LeavePage() {
                   <MenuItem value="male">Male</MenuItem>
                   <MenuItem value="female">Female</MenuItem>
                 </TextField>
-                <Typography variant="subtitle2" sx={{ gridColumn: { md: '1 / -1' }, mt: 1 }}>
-                  Request rules
-                </Typography>
                 <TextField
                   label="Min notice days"
                   type="number"
@@ -520,7 +525,18 @@ export function LeavePage() {
                     setForm((current) => ({ ...current, min_notice_days: event.target.value }))
                   }
                   fullWidth
-                  helperText="Must request at least N days before leave start"
+                  helperText="Must request at least N days before leave start. 0 = same-day OK."
+                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                />
+                <TextField
+                  label="Late request days"
+                  type="number"
+                  value={form.max_late_request_days}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, max_late_request_days: event.target.value }))
+                  }
+                  fullWidth
+                  helperText="May request up to N days after leave start. 0 = no backdated requests."
                   slotProps={{ htmlInput: { min: 0, step: 1 } }}
                 />
               </>
@@ -551,7 +567,7 @@ export function LeavePage() {
                   onClick={() =>
                     setForm((current) => ({
                       ...current,
-                      items: [...current.items, { leave_type_id: '', days_allowed: '' }],
+                      items: [...current.items, emptyItem()],
                     }))
                   }
                 >
@@ -561,23 +577,33 @@ export function LeavePage() {
 
               {form.items.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
-                  Add leave type lines (e.g. Annual 10 + Casual 6).
+                  Add lines per tenure range. The same leave type may appear more than once (e.g. Annual 0–1, 1–3, 3+).
+                  Leave max years empty for an open-ended range.
                 </Typography>
-              ) : null}
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  Leave max years empty for an open-ended range.
+                </Typography>
+              )}
 
               {form.items.map((item, index) => (
                 <Box
                   key={index}
                   sx={{
                     display: 'grid',
-                    gap: 2,
-                    gridTemplateColumns: { xs: '1fr', md: '2fr 1fr auto' },
-                    alignItems: 'center',
+                    gap: 1.5,
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: 'minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)) 112px 48px',
+                    },
+                    alignItems: 'end',
                   }}
                 >
                   <TextField
                     select
                     label="Leave type"
+                    size="small"
                     value={item.leave_type_id}
                     onChange={(event) => {
                       const value = event.target.value === '' ? '' : Number(event.target.value);
@@ -598,9 +624,43 @@ export function LeavePage() {
                     ))}
                   </TextField>
                   <TextField
-                    label="Days allowed"
+                    label="Min years"
                     type="number"
-                    slotProps={{ htmlInput: { min: 0.5, step: 0.5 } }}
+                    size="small"
+                    value={item.min_service_years}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setForm((current) => ({
+                        ...current,
+                        items: current.items.map((row, i) =>
+                          i === index ? { ...row, min_service_years: value } : row,
+                        ),
+                      }));
+                    }}
+                    fullWidth
+                    slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                  />
+                  <TextField
+                    label="Max years"
+                    type="number"
+                    size="small"
+                    value={item.max_service_years}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setForm((current) => ({
+                        ...current,
+                        items: current.items.map((row, i) =>
+                          i === index ? { ...row, max_service_years: value } : row,
+                        ),
+                      }));
+                    }}
+                    fullWidth
+                    slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                  />
+                  <TextField
+                    label="Days"
+                    type="number"
+                    size="small"
                     value={item.days_allowed}
                     onChange={(event) => {
                       const value = event.target.value;
@@ -612,9 +672,28 @@ export function LeavePage() {
                       }));
                     }}
                     fullWidth
+                    slotProps={{ htmlInput: { min: 0.5, step: 0.5 } }}
+                  />
+                  <FormControlLabel
+                    sx={{ m: 0, whiteSpace: 'nowrap', height: 40 }}
+                    control={
+                      <Checkbox
+                        checked={item.prorate_joining_year}
+                        onChange={(_, checked) =>
+                          setForm((current) => ({
+                            ...current,
+                            items: current.items.map((row, i) =>
+                              i === index ? { ...row, prorate_joining_year: checked } : row,
+                            ),
+                          }))
+                        }
+                      />
+                    }
+                    label="Prorate"
                   />
                   <IconButton
                     color="error"
+                    sx={{ justifySelf: 'center', mb: 0.25 }}
                     onClick={() =>
                       setForm((current) => ({
                         ...current,

@@ -95,6 +95,24 @@ export function EmployeeLeaveAllocationsTab({ employeeId, companyId, canEdit }: 
       render: (row) => row.leave_type?.name ?? `Type #${row.leave_type_id}`,
     },
     {
+      key: 'service',
+      header: 'Service years',
+      render: (row) => (row.service_years == null ? '—' : String(row.service_years)),
+    },
+    {
+      key: 'entitlement',
+      header: 'Entitlement',
+      render: (row) => {
+        if (row.entitlement_days == null) {
+          return String(row.total_days);
+        }
+        if (row.entitlement_days === row.total_days) {
+          return String(row.entitlement_days);
+        }
+        return `${row.entitlement_days} → ${row.total_days} prorated`;
+      },
+    },
+    {
       key: 'total',
       header: 'Total',
       render: (row) =>
@@ -212,7 +230,8 @@ export function EmployeeLeaveAllocationsTab({ employeeId, companyId, canEdit }: 
             <Box>
               <Typography variant="caption" color="text.secondary">
                 Sync uses the employee’s effective leave package (override → division → company)
-                for the selected fiscal year. Existing used/pending days are preserved.
+                for the selected fiscal year. Totals follow service-year ranges on the package and joining-year
+                proration. Existing used/pending days are preserved.
               </Typography>
             </Box>
           ) : null}

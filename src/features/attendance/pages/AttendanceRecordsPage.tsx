@@ -233,6 +233,14 @@ export function AttendanceRecordsPage() {
                 }
               />
             ) : null}
+            {row.absence_session_label && row.absence_session !== 'full' ? (
+              <Chip
+                size="small"
+                color="warning"
+                variant="outlined"
+                label={row.absence_session_label}
+              />
+            ) : null}
             {row.is_voided ? <Chip size="small" label="Voided" color="error" /> : null}
           </Stack>
         );

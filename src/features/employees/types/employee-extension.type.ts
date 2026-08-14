@@ -61,11 +61,21 @@ export type EmployeeLeaveAllocation = {
   used_days: number;
   pending_days: number;
   remaining_days: number;
+  service_years?: number | null;
+  entitlement_days?: number | null;
+  leave_package_item_id?: number | null;
   fiscal_year?: { id: number; name: string; is_active: boolean } | null;
   leave_type?: {
     id: number;
     name: string;
     is_paid: boolean;
+  } | null;
+  package_item?: {
+    id: number;
+    min_service_years: number;
+    max_service_years: number | null;
+    days_allowed: number;
+    prorate_joining_year: boolean;
   } | null;
   created_at: string;
   updated_at: string;

@@ -6,6 +6,7 @@ export type AttendanceStatus =
 
 export type AttendanceSource = 'admin' | 'mobile' | 'system';
 export type AttendanceLeaveSession = 'full' | 'am' | 'pm';
+export type AttendanceAbsenceSession = 'full' | 'am' | 'pm';
 export type AttendanceLeaveDuration = 'full_day' | 'half_day';
 export type AttendanceEntryType =
   | 'present'
@@ -55,6 +56,8 @@ export type AttendanceRecord = {
   leave_session: AttendanceLeaveSession | null;
   leave_session_label: string | null;
   leave_duration: AttendanceLeaveDuration | null;
+  absence_session: AttendanceAbsenceSession | null;
+  absence_session_label: string | null;
   late_minutes: number;
   early_leave_minutes: number;
   worked_minutes: number;
