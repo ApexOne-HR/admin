@@ -57,7 +57,7 @@ import {
   type EmploymentExceptionStatus,
   employeeStatusMeta,
 } from '../utils/employeeStatus';
-
+import { formatServiceTenure } from '../utils/formatServiceTenure';
 function FormGrid({ children }: { children: ReactNode }) {
   return (
     <Box
@@ -124,6 +124,9 @@ type FormState = {
   probation_periods_months: number;
   permanent_date: string;
   service_years: number;
+  service_months: number;
+  service_days: number;
+  service_years_float: number;
   policy_id: number | '';
   work_schedule_id: number | '';
   work_location_address: string;
@@ -151,6 +154,9 @@ const emptyForm: FormState = {
   probation_periods_months: 3,
   permanent_date: '',
   service_years: 0,
+  service_months: 0,
+  service_days: 0,
+  service_years_float: 0,
   policy_id: '',
   work_schedule_id: '',
   work_location_address: '',
@@ -202,6 +208,9 @@ function employeeToForm(row: Employee): FormState {
     probation_periods_months: row.probation_periods_months,
     permanent_date: row.permanent_date ?? '',
     service_years: row.service_years ?? 0,
+    service_months: row.service_months ?? 0,
+    service_days: row.service_days ?? 0,
+    service_years_float: row.service_years_float ?? 0,
     policy_id: row.policy_id ?? '',
     work_schedule_id: row.work_schedule_id ?? '',
     work_location_address: row.work_location_address ?? '',
@@ -735,11 +744,19 @@ export function EmployeeFormPage() {
             </FormCell>
             <FormCell>
               <TextField
-                label="Service years"
-                value={form.service_years}
+                label="Service period"
+                value={formatServiceTenure({
+                  service_years: form.service_years,
+                  service_months: form.service_months,
+                  service_days: form.service_days,
+                })}
                 fullWidth
                 disabled
-                helperText="Computed from joining date"
+                helperText={
+                  form.service_years_float > 0
+                    ? `Stored float: ${form.service_years_float} · updated daily`
+                    : 'Computed from joining date · updated daily'
+                }
               />
             </FormCell>
             <FormCell>

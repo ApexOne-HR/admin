@@ -4,7 +4,6 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import {
   Box,
   Button,
-  Checkbox,
   FormControlLabel,
   IconButton,
   MenuItem,
@@ -57,7 +56,7 @@ type ItemDraft = {
   min_service_years: string;
   max_service_years: string;
   days_allowed: string;
-  prorate_joining_year: boolean;
+  mid_year_mode: '' | 'prorate' | 'schedule';
 };
 
 const emptyItem = (): ItemDraft => ({
@@ -65,7 +64,7 @@ const emptyItem = (): ItemDraft => ({
   min_service_years: '0',
   max_service_years: '',
   days_allowed: '',
-  prorate_joining_year: false,
+  mid_year_mode: '',
 });
 
 type FormState = {
@@ -192,7 +191,9 @@ export function LeavePage() {
           ? ''
           : String(item.max_service_years),
         days_allowed: String(item.days_allowed),
-        prorate_joining_year: Boolean(item.prorate_joining_year),
+        mid_year_mode: item.mid_year_mode === 'prorate' || item.mid_year_mode === 'schedule'
+          ? item.mid_year_mode
+          : '',
       })),
     });
     setFormError(null);
@@ -245,7 +246,7 @@ export function LeavePage() {
             min_service_years: Number(item.min_service_years) || 0,
             max_service_years: item.max_service_years.trim() === '' ? null : Number(item.max_service_years),
             days_allowed: Number(item.days_allowed),
-            prorate_joining_year: item.prorate_joining_year,
+            mid_year_mode: item.mid_year_mode === '' ? null : item.mid_year_mode,
           }));
 
         if (items.some((item) => !(item.days_allowed > 0))) {
@@ -355,7 +356,12 @@ export function LeavePage() {
           .map((item) => {
             const typeName = item.leave_type?.name ?? String(item.leave_type_id);
             const max = item.max_service_years === null ? '+' : `–${item.max_service_years}`;
-            return `${typeName} ${item.min_service_years}${max}y: ${item.days_allowed}d`;
+            const mode = item.mid_year_mode === 'prorate'
+              ? ' prorate'
+              : item.mid_year_mode === 'schedule'
+                ? ' schedule'
+                : '';
+            return `${typeName} ${item.min_service_years}${max}y: ${item.days_allowed}d${mode}`;
           })
           .join(' · ') || '—',
     },
@@ -578,7 +584,7 @@ export function LeavePage() {
               {form.items.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
                   Add lines per tenure range. The same leave type may appear more than once (e.g. Annual 0–1, 1–3, 3+).
-                  Leave max years empty for an open-ended range.
+                  Leave max years empty for an open-ended range. Mid-year: empty = no upgrade; Prorate = full next band; Schedule = floored share of the delta for remaining months.
                 </Typography>
               ) : (
                 <Typography variant="caption" color="text.secondary">
@@ -595,7 +601,7 @@ export function LeavePage() {
                     gridTemplateColumns: {
                       xs: '1fr',
                       sm: '1fr 1fr',
-                      md: 'minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)) 112px 48px',
+                      md: 'minmax(0, 2fr) repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr) 48px',
                     },
                     alignItems: 'end',
                   }}
@@ -674,23 +680,26 @@ export function LeavePage() {
                     fullWidth
                     slotProps={{ htmlInput: { min: 0.5, step: 0.5 } }}
                   />
-                  <FormControlLabel
-                    sx={{ m: 0, whiteSpace: 'nowrap', height: 40 }}
-                    control={
-                      <Checkbox
-                        checked={item.prorate_joining_year}
-                        onChange={(_, checked) =>
-                          setForm((current) => ({
-                            ...current,
-                            items: current.items.map((row, i) =>
-                              i === index ? { ...row, prorate_joining_year: checked } : row,
-                            ),
-                          }))
-                        }
-                      />
-                    }
-                    label="Prorate"
-                  />
+                  <TextField
+                    select
+                    label="Mid-year"
+                    size="small"
+                    value={item.mid_year_mode}
+                    onChange={(event) => {
+                      const value = event.target.value as ItemDraft['mid_year_mode'];
+                      setForm((current) => ({
+                        ...current,
+                        items: current.items.map((row, i) =>
+                          i === index ? { ...row, mid_year_mode: value } : row,
+                        ),
+                      }));
+                    }}
+                    fullWidth
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    <MenuItem value="prorate">Prorate</MenuItem>
+                    <MenuItem value="schedule">Schedule</MenuItem>
+                  </TextField>
                   <IconButton
                     color="error"
                     sx={{ justifySelf: 'center', mb: 0.25 }}

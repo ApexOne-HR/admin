@@ -18,6 +18,8 @@ export const employeeExtensionKeys = {
     ['admin', 'employees', employeeId, 'educations'] as const,
   allocations: (employeeId: number, fiscalYearId?: number) =>
     ['admin', 'employees', employeeId, 'leave-allocations', { fiscalYearId }] as const,
+  leaveApplications: (employeeId: number, fiscalYearId?: number) =>
+    ['admin', 'employees', employeeId, 'leave-applications', { fiscalYearId }] as const,
   attachments: (employeeId: number) =>
     ['admin', 'employees', employeeId, 'attachments'] as const,
   assets: (employeeId: number) =>
@@ -170,6 +172,72 @@ export function useUpdateEmployeeLeaveAllocationMutation(employeeId: number) {
         queryKey: ['admin', 'employees', employeeId, 'leave-allocations'],
       });
       await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
+    },
+  });
+}
+
+export function useEmployeeLeaveApplicationsQuery(
+  employeeId: number,
+  fiscalYearId?: number,
+  enabled = true,
+) {
+  const { token } = useAdminSession();
+  return useQuery({
+    queryKey: employeeExtensionKeys.leaveApplications(employeeId, fiscalYearId),
+    enabled: enabled && Boolean(token) && Boolean(employeeId),
+    queryFn: () =>
+      extensionService.listEmployeeLeaveApplications(
+        requireToken(token),
+        employeeId,
+        fiscalYearId,
+      ),
+  });
+}
+
+export function useCreateEmployeeLeaveApplicationMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      leave_type_id: number;
+      start_date: string;
+      end_date: string;
+      start_session: 'full' | 'am' | 'pm';
+      reason?: string | null;
+    }) =>
+      extensionService.createEmployeeLeaveApplication(
+        requireToken(token),
+        employeeId,
+        payload,
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['admin', 'employees', employeeId, 'leave-allocations'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['admin', 'employees', employeeId, 'leave-applications'],
+      });
+    },
+  });
+}
+
+export function useCancelEmployeeLeaveApplicationMutation(employeeId: number) {
+  const { token } = useAdminSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (applicationId: number) =>
+      extensionService.cancelEmployeeLeaveApplication(
+        requireToken(token),
+        employeeId,
+        applicationId,
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['admin', 'employees', employeeId, 'leave-allocations'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['admin', 'employees', employeeId, 'leave-applications'],
+      });
     },
   });
 }

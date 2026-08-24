@@ -64,19 +64,40 @@ export type EmployeeLeaveAllocation = {
   service_years?: number | null;
   entitlement_days?: number | null;
   leave_package_item_id?: number | null;
+  mid_year_applied?: boolean;
   fiscal_year?: { id: number; name: string; is_active: boolean } | null;
   leave_type?: {
     id: number;
     name: string;
     is_paid: boolean;
+    allow_half_day?: boolean;
   } | null;
   package_item?: {
     id: number;
     min_service_years: number;
     max_service_years: number | null;
     days_allowed: number;
-    prorate_joining_year: boolean;
+    mid_year_mode?: 'prorate' | 'schedule' | null;
   } | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EmployeeLeaveApplication = {
+  id: number;
+  employee_id: number;
+  leave_type_id: number;
+  fiscal_year_id: number;
+  start_date: string;
+  end_date: string;
+  start_session: 'full' | 'am' | 'pm';
+  end_session: 'full' | 'am' | 'pm';
+  requested_days: number;
+  reason: string | null;
+  status: 'approved' | 'cancelled';
+  creation_source: 'admin' | 'employee';
+  leave_type?: { id: number; name: string } | null;
+  created_by?: { id: number; name: string } | null;
   created_at: string;
   updated_at: string;
 };

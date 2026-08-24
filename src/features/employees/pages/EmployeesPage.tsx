@@ -25,6 +25,7 @@ import { useToast } from '@/components/common/feedback/ToastProvider';
 import { PageHeader } from '@/components/layout/PageHeader/PageHeader';
 import { can } from '@/features/auth/services/auth.service';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
+import { formatServiceTenureShort } from '@/features/employees/utils/formatServiceTenure';
 import {
   useCompaniesQuery,
   useDivisionsQuery,
@@ -205,8 +206,13 @@ export function EmployeesPage() {
     { key: 'status', header: 'Status', render: (row) => statusChip(row.status) },
     {
       key: 'service',
-      header: 'Service Years',
-      render: (row) => String(row.service_years ?? 0),
+      header: 'Service',
+      render: (row) =>
+        formatServiceTenureShort({
+          service_years: row.service_years,
+          service_months: row.service_months,
+          service_days: row.service_days,
+        }),
     },
     {
       key: 'actions',

@@ -53,6 +53,9 @@ export type Employee = {
   probation_periods_months: number;
   permanent_date: string | null;
   service_years: number;
+  service_months: number;
+  service_days: number;
+  service_years_float: number;
   date_of_birth: string | null;
   gender: EmployeeGender | null;
   is_foreigner: boolean;

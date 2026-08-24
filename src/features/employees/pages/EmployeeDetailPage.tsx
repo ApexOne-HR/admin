@@ -53,6 +53,7 @@ import { EmployeePersonalInformationTab } from '../components/EmployeePersonalIn
 import { useEmployeeQuery } from '../hooks/useEmployeeQueries';
 import type { EffectiveDefault, EmployeeStatus } from '../types/employee.type';
 import { employeeStatusMeta } from '../utils/employeeStatus';
+import { formatServiceTenure } from '../utils/formatServiceTenure';
 
 const cardHeaderSx = {
   pb: 0,
@@ -181,6 +182,7 @@ export function EmployeeDetailPage() {
   const canUpdate = can(session?.user, 'employees.update');
   const canManageAccount = can(session?.user, 'employees.manage_account');
   const canManageSalary = can(session?.user, 'employees.manage_salary');
+  const canManageLeave = can(session?.user, 'leaves.manage');
   const canManageAssets = can(session?.user, 'employees.manage_assets');
   const [tab, setTab] = useState(() => initialDetailTab(searchParams));
 
@@ -442,7 +444,14 @@ export function EmployeeDetailPage() {
               <DetailField label="Resignation date" value={employee.date_of_resignation} />
             </FormCell>
             <FormCell>
-              <DetailField label="Service years" value={String(employee.service_years ?? 0)} />
+              <DetailField
+                label="Service period"
+                value={formatServiceTenure({
+                  service_years: employee.service_years,
+                  service_months: employee.service_months,
+                  service_days: employee.service_days,
+                })}
+              />
             </FormCell>
             <FormCell>
               <DetailField label="Auto attendance" value={yesNo(employee.auto_attendance)} />
@@ -521,6 +530,7 @@ export function EmployeeDetailPage() {
           employeeId={employee.id}
           companyId={employee.company_id}
           canEdit={canUpdate}
+          canManageLeave={canManageLeave}
         />
       ) : null}
 

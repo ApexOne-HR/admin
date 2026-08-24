@@ -11,6 +11,7 @@ import type {
   EmployeeEmergencyContact,
   EmployeeEmergencyContactDraft,
   EmployeeLeaveAllocation,
+  EmployeeLeaveApplication,
 } from '../types/employee-extension.type';
 
 export async function listEmployeeBanks(token: string, employeeId: number) {
@@ -128,6 +129,51 @@ export async function updateEmployeeLeaveAllocation(
       token,
       body: payload,
     },
+  );
+  return response.data;
+}
+
+export async function listEmployeeLeaveApplications(
+  token: string,
+  employeeId: number,
+  fiscalYearId?: number,
+) {
+  const response = await apiRequest<EmployeeLeaveApplication[]>(
+    `/employees/${employeeId}/leave-applications`,
+    {
+      token,
+      query: { fiscal_year_id: fiscalYearId },
+    },
+  );
+  return response.data;
+}
+
+export async function createEmployeeLeaveApplication(
+  token: string,
+  employeeId: number,
+  payload: {
+    leave_type_id: number;
+    start_date: string;
+    end_date: string;
+    start_session: 'full' | 'am' | 'pm';
+    reason?: string | null;
+  },
+) {
+  const response = await apiRequest<EmployeeLeaveApplication>(
+    `/employees/${employeeId}/leave-applications`,
+    { method: 'POST', token, body: payload },
+  );
+  return response.data;
+}
+
+export async function cancelEmployeeLeaveApplication(
+  token: string,
+  employeeId: number,
+  applicationId: number,
+) {
+  const response = await apiRequest<EmployeeLeaveApplication>(
+    `/employees/${employeeId}/leave-applications/${applicationId}/cancel`,
+    { method: 'POST', token, body: {} },
   );
   return response.data;
 }

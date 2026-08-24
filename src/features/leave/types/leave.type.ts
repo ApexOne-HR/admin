@@ -16,13 +16,15 @@ export type LeaveType = {
   updated_at: string;
 };
 
+export type LeaveMidYearMode = 'prorate' | 'schedule';
+
 export type LeavePackageItem = {
   id?: number;
   leave_type_id: number;
   min_service_years: number;
   max_service_years: number | null;
   days_allowed: number;
-  prorate_joining_year: boolean;
+  mid_year_mode: LeaveMidYearMode | null;
   leave_type?: {
     id: number;
     name: string;
@@ -64,6 +66,6 @@ export type LeavePackagePayload = {
     min_service_years?: number;
     max_service_years?: number | null;
     days_allowed: number;
-    prorate_joining_year?: boolean;
+    mid_year_mode?: LeaveMidYearMode | null;
   }>;
 };

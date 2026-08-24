@@ -1,11 +1,12 @@
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import SyncRoundedIcon from '@mui/icons-material/SyncRounded';
 import {
-  Box,
   Button,
   Card,
   CardContent,
   CardHeader,
+  Chip,
   MenuItem,
   Stack,
   TextField,
@@ -13,17 +14,25 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { AppLoader } from '@/components/common/AppLoader';
+import { AppModal } from '@/components/common/AppModal';
 import { AppTable, type AppTableColumn } from '@/components/common/AppTable';
 import { EmptyState } from '@/components/common/EmptyState';
+import { useConfirm } from '@/components/common/feedback/ConfirmProvider';
 import { useToast } from '@/components/common/feedback/ToastProvider';
 import { useFiscalYearsQuery } from '@/features/fiscal/hooks/useFiscalQueries';
 import { getApiErrorMessage } from '@/infra/http/getApiErrorMessage';
 import {
+  useCancelEmployeeLeaveApplicationMutation,
+  useCreateEmployeeLeaveApplicationMutation,
   useEmployeeLeaveAllocationsQuery,
+  useEmployeeLeaveApplicationsQuery,
   useSyncEmployeeLeaveAllocationsMutation,
   useUpdateEmployeeLeaveAllocationMutation,
 } from '../hooks/useEmployeeExtensionQueries';
-import type { EmployeeLeaveAllocation } from '../types/employee-extension.type';
+import type {
+  EmployeeLeaveAllocation,
+  EmployeeLeaveApplication,
+} from '../types/employee-extension.type';
 
 const cardHeaderSx = {
   pb: 0,
@@ -33,19 +42,44 @@ const cardHeaderSx = {
   },
 };
 
+function countLeaveDays(start: string, end: string, session: 'full' | 'am' | 'pm'): number {
+  if (!start || !end || start > end) {
+    return 0;
+  }
+  if (start === end) {
+    return session === 'full' ? 1 : 0.5;
+  }
+  const from = new Date(`${start}T00:00:00`);
+  const to = new Date(`${end}T00:00:00`);
+  return Math.round((to.getTime() - from.getTime()) / 86400000) + 1;
+}
+
 type Props = {
   employeeId: number;
   companyId: number;
   canEdit: boolean;
+  canManageLeave: boolean;
 };
 
-export function EmployeeLeaveAllocationsTab({ employeeId, companyId, canEdit }: Props) {
+export function EmployeeLeaveAllocationsTab({
+  employeeId,
+  companyId,
+  canEdit,
+  canManageLeave,
+}: Props) {
   const toast = useToast();
+  const confirm = useConfirm();
   const yearsQuery = useFiscalYearsQuery(companyId);
   const years = yearsQuery.data ?? [];
   const activeYear = useMemo(() => years.find((y) => y.is_active), [years]);
   const [fiscalYearId, setFiscalYearId] = useState<number | ''>('');
   const [editing, setEditing] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [leaveTypeId, setLeaveTypeId] = useState<number | ''>('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [session, setSession] = useState<'full' | 'am' | 'pm'>('full');
+  const [reason, setReason] = useState('');
 
   const selectedYearId = fiscalYearId === '' ? activeYear?.id : fiscalYearId;
 
@@ -54,14 +88,33 @@ export function EmployeeLeaveAllocationsTab({ employeeId, companyId, canEdit }: 
     selectedYearId,
     Boolean(selectedYearId),
   );
+  const applicationsQuery = useEmployeeLeaveApplicationsQuery(
+    employeeId,
+    selectedYearId,
+    Boolean(selectedYearId),
+  );
   const syncAllocations = useSyncEmployeeLeaveAllocationsMutation(employeeId);
   const updateAllocation = useUpdateEmployeeLeaveAllocationMutation(employeeId);
+  const createLeave = useCreateEmployeeLeaveApplicationMutation(employeeId);
+  const cancelLeave = useCancelEmployeeLeaveApplicationMutation(employeeId);
+
+  const allocations = allocationsQuery.data ?? [];
+  const selectedType = allocations.find((row) => row.leave_type_id === leaveTypeId);
+  const isRange = Boolean(startDate && endDate && startDate !== endDate);
+  const previewDays = countLeaveDays(startDate, endDate, isRange ? 'full' : session);
+
+  const openCreate = () => {
+    setLeaveTypeId(allocations[0]?.leave_type_id ?? '');
+    setStartDate('');
+    setEndDate('');
+    setSession('full');
+    setReason('');
+    setFormOpen(true);
+  };
 
   const handleSync = async () => {
     try {
-      await syncAllocations.mutateAsync(
-        selectedYearId ? Number(selectedYearId) : undefined,
-      );
+      await syncAllocations.mutateAsync(selectedYearId ? Number(selectedYearId) : undefined);
       toast.success('Leave allocations synced from package.');
       if (fiscalYearId === '' && activeYear) {
         setFiscalYearId(activeYear.id);
@@ -88,7 +141,44 @@ export function EmployeeLeaveAllocationsTab({ employeeId, companyId, canEdit }: 
     }
   };
 
-  const columns: AppTableColumn<EmployeeLeaveAllocation>[] = [
+  const handleSaveLeave = async () => {
+    if (leaveTypeId === '' || !startDate || !endDate) {
+      toast.error('Leave type and dates are required.');
+      return;
+    }
+    try {
+      await createLeave.mutateAsync({
+        leave_type_id: Number(leaveTypeId),
+        start_date: startDate,
+        end_date: endDate,
+        start_session: isRange ? 'full' : session,
+        reason: reason.trim() || null,
+      });
+      toast.success('Leave recorded.');
+      setFormOpen(false);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
+  };
+
+  const handleCancelLeave = async (row: EmployeeLeaveApplication) => {
+    const ok = await confirm({
+      title: 'Cancel this leave?',
+      description: 'Used days will be returned to the balance.',
+      confirmLabel: 'Cancel leave',
+    });
+    if (!ok) {
+      return;
+    }
+    try {
+      await cancelLeave.mutateAsync(row.id);
+      toast.success('Leave cancelled.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
+  };
+
+  const balanceColumns: AppTableColumn<EmployeeLeaveAllocation>[] = [
     {
       key: 'type',
       header: 'Leave type',
@@ -106,10 +196,16 @@ export function EmployeeLeaveAllocationsTab({ employeeId, companyId, canEdit }: 
         if (row.entitlement_days == null) {
           return String(row.total_days);
         }
+        if (row.mid_year_applied) {
+          if (row.entitlement_days === row.total_days) {
+            return `${row.entitlement_days} (mid-year)`;
+          }
+          return `${row.entitlement_days} → ${row.total_days} mid-year`;
+        }
         if (row.entitlement_days === row.total_days) {
           return String(row.entitlement_days);
         }
-        return `${row.entitlement_days} → ${row.total_days} prorated`;
+        return `${row.entitlement_days} → ${row.total_days}`;
       },
     },
     {
@@ -138,105 +234,283 @@ export function EmployeeLeaveAllocationsTab({ employeeId, companyId, canEdit }: 
     { key: 'remaining', header: 'Remaining', render: (row) => String(row.remaining_days) },
   ];
 
+  const applicationColumns: AppTableColumn<EmployeeLeaveApplication>[] = [
+    {
+      key: 'dates',
+      header: 'Dates',
+      render: (row) =>
+        row.start_date === row.end_date
+          ? row.start_date
+          : `${row.start_date} → ${row.end_date}`,
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      render: (row) => row.leave_type?.name ?? `Type #${row.leave_type_id}`,
+    },
+    {
+      key: 'days',
+      header: 'Days',
+      render: (row) =>
+        `${row.requested_days}${row.start_session === 'am' ? ' AM' : row.start_session === 'pm' ? ' PM' : ''}`,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row) => (
+        <Chip
+          size="small"
+          label={row.status}
+          color={row.status === 'approved' ? 'success' : 'default'}
+        />
+      ),
+    },
+    {
+      key: 'by',
+      header: 'By',
+      render: (row) => row.created_by?.name ?? '—',
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (row) =>
+        canManageLeave && row.status === 'approved' ? (
+          <Button size="small" color="error" onClick={() => void handleCancelLeave(row)}>
+            Cancel
+          </Button>
+        ) : null,
+    },
+  ];
+
   return (
-    <Card variant="outlined">
-      <CardHeader
-        title="Leave balances"
-        sx={cardHeaderSx}
-        action={
-          canEdit ? (
-            editing ? (
-              <Button size="small" onClick={() => setEditing(false)}>
-                Done
-              </Button>
-            ) : (
-              <Button
-                size="small"
-                startIcon={<EditRoundedIcon />}
-                onClick={() => setEditing(true)}
-              >
-                Edit
-              </Button>
-            )
-          ) : null
-        }
-      />
-      <CardContent>
-        <Stack spacing={2}>
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            spacing={1.5}
-            sx={{ alignItems: 'center' }}
-          >
-            <TextField
-              select
-              size="small"
-              label="Fiscal year"
-              value={selectedYearId ?? ''}
-              onChange={(e) =>
-                setFiscalYearId(e.target.value === '' ? '' : Number(e.target.value))
-              }
-              sx={{ minWidth: 220 }}
+    <Stack spacing={2}>
+      <Card variant="outlined">
+        <CardHeader
+          title="Leave balances"
+          sx={cardHeaderSx}
+          action={
+            <Stack direction="row" spacing={1}>
+              {canManageLeave ? (
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<AddRoundedIcon />}
+                  disabled={!selectedYearId || allocations.length === 0}
+                  onClick={openCreate}
+                >
+                  Add leave
+                </Button>
+              ) : null}
+              {canEdit ? (
+                editing ? (
+                  <Button size="small" onClick={() => setEditing(false)}>
+                    Done
+                  </Button>
+                ) : (
+                  <Button
+                    size="small"
+                    startIcon={<EditRoundedIcon />}
+                    onClick={() => setEditing(true)}
+                  >
+                    Edit
+                  </Button>
+                )
+              ) : null}
+            </Stack>
+          }
+        />
+        <CardContent>
+          <Stack spacing={2}>
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              spacing={1.5}
+              sx={{ alignItems: 'center' }}
             >
-              {years.map((year) => (
-                <MenuItem key={year.id} value={year.id}>
-                  {year.name}
-                  {year.is_active ? ' (active)' : ''}
-                </MenuItem>
-              ))}
-            </TextField>
-            {editing ? (
-              <Button
-                variant="outlined"
-                startIcon={<SyncRoundedIcon />}
-                disabled={syncAllocations.isPending || !selectedYearId}
-                onClick={() => void handleSync()}
+              <TextField
+                select
+                size="small"
+                label="Fiscal year"
+                value={selectedYearId ?? ''}
+                onChange={(e) =>
+                  setFiscalYearId(e.target.value === '' ? '' : Number(e.target.value))
+                }
+                sx={{ minWidth: 220 }}
               >
-                {syncAllocations.isPending ? 'Syncing…' : 'Sync from leave package'}
-              </Button>
+                {years.map((year) => (
+                  <MenuItem key={year.id} value={year.id}>
+                    {year.name}
+                    {year.is_active ? ' (active)' : ''}
+                  </MenuItem>
+                ))}
+              </TextField>
+              {editing ? (
+                <Button
+                  variant="outlined"
+                  startIcon={<SyncRoundedIcon />}
+                  disabled={syncAllocations.isPending || !selectedYearId}
+                  onClick={() => void handleSync()}
+                >
+                  {syncAllocations.isPending ? 'Syncing…' : 'Sync from leave package'}
+                </Button>
+              ) : null}
+            </Stack>
+
+            {!selectedYearId ? (
+              <EmptyState
+                title="No fiscal year"
+                description="Create and activate a fiscal year for this company first."
+              />
+            ) : allocationsQuery.isLoading ? (
+              <AppLoader label="Loading leave balances…" />
+            ) : allocationsQuery.isError ? (
+              <Typography color="error" variant="body2">
+                {getApiErrorMessage(allocationsQuery.error)}
+              </Typography>
+            ) : (
+              <AppTable
+                columns={balanceColumns}
+                rows={allocations}
+                getRowKey={(row) => row.id}
+                emptyState={
+                  <EmptyState
+                    title="No leave allocations"
+                    description={
+                      editing
+                        ? 'Sync from the effective leave package to generate balances.'
+                        : 'No leave balances for this fiscal year.'
+                    }
+                  />
+                }
+              />
+            )}
+
+            {editing ? (
+              <Typography variant="caption" color="text.secondary">
+                Sync uses the employee’s effective leave package for the selected fiscal year.
+                Existing used/pending days are preserved.
+              </Typography>
             ) : null}
           </Stack>
+        </CardContent>
+      </Card>
 
+      <Card variant="outlined">
+        <CardHeader title="Leave recorded" sx={cardHeaderSx} />
+        <CardContent>
           {!selectedYearId ? (
-            <EmptyState
-              title="No fiscal year"
-              description="Create and activate a fiscal year for this company first."
-            />
-          ) : allocationsQuery.isLoading ? (
-            <AppLoader label="Loading leave balances…" />
-          ) : allocationsQuery.isError ? (
+            <EmptyState title="No fiscal year" description="Select a fiscal year to see leave records." />
+          ) : applicationsQuery.isLoading ? (
+            <AppLoader label="Loading leave records…" />
+          ) : applicationsQuery.isError ? (
             <Typography color="error" variant="body2">
-              {getApiErrorMessage(allocationsQuery.error)}
+              {getApiErrorMessage(applicationsQuery.error)}
             </Typography>
           ) : (
             <AppTable
-              columns={columns}
-              rows={allocationsQuery.data ?? []}
+              columns={applicationColumns}
+              rows={applicationsQuery.data ?? []}
               getRowKey={(row) => row.id}
               emptyState={
                 <EmptyState
-                  title="No leave allocations"
-                  description={
-                    editing
-                      ? 'Sync from the effective leave package to generate balances.'
-                      : 'No leave balances for this fiscal year.'
-                  }
+                  title="No leave recorded"
+                  description="Add leave to record time off against the balance."
                 />
               }
             />
           )}
+        </CardContent>
+      </Card>
 
-          {editing ? (
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Sync uses the employee’s effective leave package (override → division → company)
-                for the selected fiscal year. Totals follow service-year ranges on the package and joining-year
-                proration. Existing used/pending days are preserved.
-              </Typography>
-            </Box>
-          ) : null}
+      <AppModal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        maxWidth="sm"
+        title="Add leave"
+        actions={
+          <>
+            <Button onClick={() => setFormOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={createLeave.isPending}
+              onClick={() => void handleSaveLeave()}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          <TextField
+            select
+            label="Leave type"
+            value={leaveTypeId}
+            onChange={(e) =>
+              setLeaveTypeId(e.target.value === '' ? '' : Number(e.target.value))
+            }
+            fullWidth
+            helperText={
+              selectedType
+                ? `${selectedType.remaining_days} days remaining`
+                : 'Choose a type from this fiscal year'
+            }
+          >
+            {allocations.map((row) => (
+              <MenuItem key={row.id} value={row.leave_type_id}>
+                {row.leave_type?.name ?? `Type #${row.leave_type_id}`}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
+              label="Start date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextField
+              label="End date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+          </Stack>
+          <TextField
+            select
+            label="Day unit"
+            value={isRange ? 'full' : session}
+            onChange={(e) => setSession(e.target.value as 'full' | 'am' | 'pm')}
+            disabled={isRange || !selectedType?.leave_type?.allow_half_day}
+            fullWidth
+            helperText={
+              isRange
+                ? 'Multi-day leave is always full day'
+                : selectedType?.leave_type?.allow_half_day
+                  ? undefined
+                  : 'This type does not allow half day'
+            }
+          >
+            <MenuItem value="full">Full day</MenuItem>
+            <MenuItem value="am">Morning (AM)</MenuItem>
+            <MenuItem value="pm">Evening (PM)</MenuItem>
+          </TextField>
+          <TextField
+            label="Reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+          />
+          <Typography variant="body2" color="text.secondary">
+            Days to record: {previewDays || '—'} (saved as approved, no approval step)
+          </Typography>
         </Stack>
-      </CardContent>
-    </Card>
+      </AppModal>
+    </Stack>
   );
 }
