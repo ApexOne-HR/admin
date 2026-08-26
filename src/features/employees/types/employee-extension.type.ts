@@ -61,7 +61,6 @@ export type EmployeeLeaveAllocation = {
   used_days: number;
   pending_days: number;
   remaining_days: number;
-  service_years?: number | null;
   entitlement_days?: number | null;
   leave_package_item_id?: number | null;
   mid_year_applied?: boolean;

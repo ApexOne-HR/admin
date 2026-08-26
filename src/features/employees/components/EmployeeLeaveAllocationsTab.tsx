@@ -1,6 +1,5 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import SyncRoundedIcon from '@mui/icons-material/SyncRounded';
 import {
   Button,
   Card,
@@ -26,7 +25,6 @@ import {
   useCreateEmployeeLeaveApplicationMutation,
   useEmployeeLeaveAllocationsQuery,
   useEmployeeLeaveApplicationsQuery,
-  useSyncEmployeeLeaveAllocationsMutation,
   useUpdateEmployeeLeaveAllocationMutation,
 } from '../hooks/useEmployeeExtensionQueries';
 import type {
@@ -93,7 +91,6 @@ export function EmployeeLeaveAllocationsTab({
     selectedYearId,
     Boolean(selectedYearId),
   );
-  const syncAllocations = useSyncEmployeeLeaveAllocationsMutation(employeeId);
   const updateAllocation = useUpdateEmployeeLeaveAllocationMutation(employeeId);
   const createLeave = useCreateEmployeeLeaveApplicationMutation(employeeId);
   const cancelLeave = useCancelEmployeeLeaveApplicationMutation(employeeId);
@@ -110,18 +107,6 @@ export function EmployeeLeaveAllocationsTab({
     setSession('full');
     setReason('');
     setFormOpen(true);
-  };
-
-  const handleSync = async () => {
-    try {
-      await syncAllocations.mutateAsync(selectedYearId ? Number(selectedYearId) : undefined);
-      toast.success('Leave allocations synced from package.');
-      if (fiscalYearId === '' && activeYear) {
-        setFiscalYearId(activeYear.id);
-      }
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-    }
   };
 
   const handleTotalChange = async (row: EmployeeLeaveAllocation, value: string) => {
@@ -183,11 +168,6 @@ export function EmployeeLeaveAllocationsTab({
       key: 'type',
       header: 'Leave type',
       render: (row) => row.leave_type?.name ?? `Type #${row.leave_type_id}`,
-    },
-    {
-      key: 'service',
-      header: 'Service years',
-      render: (row) => (row.service_years == null ? '—' : String(row.service_years)),
     },
     {
       key: 'entitlement',
@@ -344,16 +324,6 @@ export function EmployeeLeaveAllocationsTab({
                   </MenuItem>
                 ))}
               </TextField>
-              {editing ? (
-                <Button
-                  variant="outlined"
-                  startIcon={<SyncRoundedIcon />}
-                  disabled={syncAllocations.isPending || !selectedYearId}
-                  onClick={() => void handleSync()}
-                >
-                  {syncAllocations.isPending ? 'Syncing…' : 'Sync from leave package'}
-                </Button>
-              ) : null}
             </Stack>
 
             {!selectedYearId ? (
@@ -375,11 +345,7 @@ export function EmployeeLeaveAllocationsTab({
                 emptyState={
                   <EmptyState
                     title="No leave allocations"
-                    description={
-                      editing
-                        ? 'Sync from the effective leave package to generate balances.'
-                        : 'No leave balances for this fiscal year.'
-                    }
+                    description="Balances appear after the employee is saved with a joining date and leave package (or company/division default)."
                   />
                 }
               />
@@ -387,8 +353,7 @@ export function EmployeeLeaveAllocationsTab({
 
             {editing ? (
               <Typography variant="caption" color="text.secondary">
-                Sync uses the employee’s effective leave package for the selected fiscal year.
-                Existing used/pending days are preserved.
+                Edit total days to override the package entitlement. Used and pending days are kept.
               </Typography>
             ) : null}
           </Stack>

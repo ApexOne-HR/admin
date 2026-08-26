@@ -131,25 +131,6 @@ export function useEmployeeLeaveAllocationsQuery(
   });
 }
 
-export function useSyncEmployeeLeaveAllocationsMutation(employeeId: number) {
-  const { token } = useAdminSession();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (fiscalYearId?: number) =>
-      extensionService.syncEmployeeLeaveAllocations(
-        requireToken(token),
-        employeeId,
-        fiscalYearId,
-      ),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['admin', 'employees', employeeId, 'leave-allocations'],
-      });
-      await queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employeeId) });
-    },
-  });
-}
-
 export function useUpdateEmployeeLeaveAllocationMutation(employeeId: number) {
   const { token } = useAdminSession();
   const queryClient = useQueryClient();

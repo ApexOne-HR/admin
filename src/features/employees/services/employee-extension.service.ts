@@ -100,22 +100,6 @@ export async function listEmployeeLeaveAllocations(
   return response.data;
 }
 
-export async function syncEmployeeLeaveAllocations(
-  token: string,
-  employeeId: number,
-  fiscalYearId?: number,
-) {
-  const response = await apiRequest<EmployeeLeaveAllocation[]>(
-    `/employees/${employeeId}/leave-allocations/sync`,
-    {
-      method: 'POST',
-      token,
-      body: fiscalYearId ? { fiscal_year_id: fiscalYearId } : {},
-    },
-  );
-  return response.data;
-}
-
 export async function updateEmployeeLeaveAllocation(
   token: string,
   employeeId: number,
