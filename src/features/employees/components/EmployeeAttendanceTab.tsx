@@ -750,6 +750,30 @@ export function EmployeeAttendanceTab({
               color={metaStatus.color}
               variant="outlined"
             />
+            {row.leave_application ? (
+              <Tooltip
+                title={
+                  row.leave_application.reason?.trim()
+                    ? row.leave_application.reason
+                    : 'Synced from approved leave application'
+                }
+              >
+                <Chip
+                  size="small"
+                  color="secondary"
+                  variant="outlined"
+                  component={RouterLink}
+                  clickable
+                  to={`/employees/${employeeId}?tab=leave`}
+                  label={
+                    row.leave_application.leave_type?.name
+                      ? `${row.leave_application.leave_type.name} leave`
+                      : `Leave #${row.leave_application.id}`
+                  }
+                  onClick={(event) => event.stopPropagation()}
+                />
+              </Tooltip>
+            ) : null}
             {row.is_voided ? <Chip size="small" label="Voided" color="error" /> : null}
           </Stack>
         );
@@ -1081,17 +1105,27 @@ export function EmployeeAttendanceTab({
                           </Typography>
                           {record && statusMeta ? (
                             <Stack spacing={0.5} sx={{ mt: 'auto' }}>
-                              <Chip
-                                size="small"
-                                label={statusMeta.label}
-                                color={statusMeta.color}
-                                variant="outlined"
-                                sx={{
-                                  height: 22,
-                                  alignSelf: 'flex-start',
-                                  '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
-                                }}
-                              />
+                              <Tooltip
+                                title={
+                                  record.leave_application?.reason?.trim()
+                                    ? record.leave_application.reason
+                                    : record.leave_application?.leave_type?.name
+                                      ? `${record.leave_application.leave_type.name} leave`
+                                      : undefined
+                                }
+                              >
+                                <Chip
+                                  size="small"
+                                  label={statusMeta.label}
+                                  color={statusMeta.color}
+                                  variant="outlined"
+                                  sx={{
+                                    height: 22,
+                                    alignSelf: 'flex-start',
+                                    '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                                  }}
+                                />
+                              </Tooltip>
                               {record.is_voided ? (
                                 <Chip
                                   size="small"

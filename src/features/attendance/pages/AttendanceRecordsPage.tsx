@@ -241,6 +241,30 @@ export function AttendanceRecordsPage() {
                 label={row.absence_session_label}
               />
             ) : null}
+            {row.leave_application ? (
+              <Tooltip
+                title={
+                  row.leave_application.reason?.trim()
+                    ? row.leave_application.reason
+                    : 'Synced from approved leave application'
+                }
+              >
+                <Chip
+                  size="small"
+                  color="secondary"
+                  variant="outlined"
+                  component={RouterLink}
+                  clickable
+                  to={`/employees/${row.employee_id}?tab=leave`}
+                  label={
+                    row.leave_application.leave_type?.name
+                      ? `${row.leave_application.leave_type.name} leave`
+                      : `Leave #${row.leave_application.id}`
+                  }
+                  onClick={(event) => event.stopPropagation()}
+                />
+              </Tooltip>
+            ) : null}
             {row.is_voided ? <Chip size="small" label="Voided" color="error" /> : null}
           </Stack>
         );

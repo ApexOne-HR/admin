@@ -26,6 +26,26 @@ export type AttendanceEmployeeSummary = {
   full_name: string;
 };
 
+export type AttendanceLeaveApplication = {
+  id: number;
+  employee_id: number;
+  leave_type_id: number;
+  fiscal_year_id: number;
+  start_date: string;
+  end_date: string;
+  start_session: 'full' | 'am' | 'pm';
+  end_session: 'full' | 'am' | 'pm';
+  requested_days: number;
+  counted_dates?: Array<{ date: string; session: 'full' | 'am' | 'pm'; amount: number }>;
+  reason: string | null;
+  status: 'approved' | 'cancelled' | 'pending' | 'rejected';
+  creation_source: 'admin' | 'employee';
+  leave_type?: { id: number; name: string } | null;
+  created_by?: { id: number; name: string } | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AttendanceActorSummary = {
   id: number;
   name: string;
@@ -57,6 +77,7 @@ export type AttendanceRecord = {
   leave_session_label: string | null;
   leave_duration: AttendanceLeaveDuration | null;
   leave_application_id: number | null;
+  leave_application?: AttendanceLeaveApplication | null;
   absence_session: AttendanceAbsenceSession | null;
   absence_session_label: string | null;
   late_minutes: number;

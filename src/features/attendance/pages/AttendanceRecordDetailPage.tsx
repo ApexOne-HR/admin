@@ -1,6 +1,7 @@
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import {
@@ -38,6 +39,7 @@ import {
 } from '../hooks/useAttendanceQueries';
 import type {
   AttendanceEntryType,
+  AttendanceLeaveApplication,
   AttendanceRecord,
   AttendanceUpdatePayload,
 } from '../types/attendance.type';
@@ -113,6 +115,34 @@ function defaultTimes(type: AttendanceEntryType) {
     return { checkIn: '09:00', checkOut: '12:00' };
   }
   return { checkIn: '09:00', checkOut: '17:00' };
+}
+
+function leaveApplicationDateRange(application: AttendanceLeaveApplication): string {
+  return application.start_date === application.end_date
+    ? application.start_date
+    : `${application.start_date} → ${application.end_date}`;
+}
+
+function leaveDayAmountForRecord(record: AttendanceRecord): string | null {
+  const application = record.leave_application;
+  if (!application) {
+    return null;
+  }
+
+  const dayEntry = application.counted_dates?.find((entry) => entry.date === record.work_date);
+  if (dayEntry) {
+    return String(dayEntry.amount);
+  }
+
+  if (record.leave_duration === 'half_day') {
+    return '0.5';
+  }
+
+  if (record.leave_duration === 'full_day') {
+    return '1';
+  }
+
+  return null;
 }
 
 function draftFromRecord(record: AttendanceRecord) {
@@ -217,6 +247,8 @@ export function AttendanceRecordDetailPage() {
   }
 
   const statusMeta = attendanceStatusMeta(record.status);
+  const leaveApplication = record.leave_application;
+  const leaveDayAmount = leaveDayAmountForRecord(record);
   const locations = (locationsQuery.data ?? []).filter((location) => location.is_active);
   const requiresPunch =
     draft.attendanceType !== 'absent' && draft.attendanceType !== 'full_day_leave';
@@ -411,6 +443,75 @@ export function AttendanceRecordDetailPage() {
         </DetailGrid>
       </SectionCard>
 
+      {leaveApplication ? (
+        <SectionCard
+          title={sectionTitle(
+            <EventAvailableOutlinedIcon fontSize="small" sx={{ color: 'secondary.main' }} />,
+            'Linked leave application',
+          )}
+        >
+          <Stack spacing={2}>
+            <Alert severity="info" sx={{ mb: 0 }}>
+              This attendance row was synced from an approved leave application. Correcting or
+              overriding it will cancel the whole leave application.
+            </Alert>
+            <DetailGrid>
+              <DetailField
+                label="Application"
+                value={
+                  record.employee_id ? (
+                    <Button
+                      component={RouterLink}
+                      to={`/employees/${record.employee_id}?tab=leave`}
+                      size="small"
+                      sx={{ px: 0, minWidth: 0, justifyContent: 'flex-start' }}
+                    >
+                      #{leaveApplication.id}
+                    </Button>
+                  ) : (
+                    `#${leaveApplication.id}`
+                  )
+                }
+              />
+              <DetailField
+                label="Leave type"
+                value={
+                  leaveApplication.leave_type?.name ??
+                  `Type #${leaveApplication.leave_type_id}`
+                }
+              />
+              <DetailField
+                label="Status"
+                value={
+                  <Chip
+                    size="small"
+                    label={leaveApplication.status}
+                    color={leaveApplication.status === 'approved' ? 'success' : 'default'}
+                  />
+                }
+              />
+              <DetailField label="Leave period" value={leaveApplicationDateRange(leaveApplication)} />
+              <DetailField label="Total requested days" value={leaveApplication.requested_days} />
+              <DetailField label="This day counted" value={leaveDayAmount} />
+              <DetailField label="This day session" value={record.leave_session_label} />
+              <DetailField label="Recorded by" value={leaveApplication.created_by?.name} />
+              <DetailField
+                label="Recorded at"
+                value={formatAttendanceDateTime(leaveApplication.created_at, record.timezone)}
+              />
+            </DetailGrid>
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Reason
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.25, fontWeight: 500, whiteSpace: 'pre-wrap' }}>
+                {leaveApplication.reason?.trim() ? leaveApplication.reason : '—'}
+              </Typography>
+            </Box>
+          </Stack>
+        </SectionCard>
+      ) : null}
+
       <SectionCard
         title={sectionTitle(
           <LoginOutlinedIcon fontSize="small" sx={{ color: 'info.main' }} />,
@@ -537,6 +638,12 @@ export function AttendanceRecordDetailPage() {
       >
         <Stack spacing={2} sx={{ pt: 1 }}>
           {formError ? <Alert severity="error">{formError}</Alert> : null}
+          {record.leave_application ? (
+            <Alert severity="warning">
+              This record is linked to leave application #{record.leave_application.id}. Saving
+              will cancel that leave application and restore the employee&apos;s leave balance.
+            </Alert>
+          ) : null}
           <TextField
             select
             required
