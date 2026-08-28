@@ -198,6 +198,12 @@ export function useCreateEmployeeLeaveApplicationMutation(employeeId: number) {
       await queryClient.invalidateQueries({
         queryKey: ['admin', 'employees', employeeId, 'leave-applications'],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ['admin', 'attendance-records'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['admin', 'employees', employeeId, 'attendance'],
+      });
     },
   });
 }
@@ -218,6 +224,12 @@ export function useCancelEmployeeLeaveApplicationMutation(employeeId: number) {
       });
       await queryClient.invalidateQueries({
         queryKey: ['admin', 'employees', employeeId, 'leave-applications'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['admin', 'attendance-records'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['admin', 'employees', employeeId, 'attendance'],
       });
     },
   });

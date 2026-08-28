@@ -56,6 +56,7 @@ export type AttendanceRecord = {
   leave_session: AttendanceLeaveSession | null;
   leave_session_label: string | null;
   leave_duration: AttendanceLeaveDuration | null;
+  leave_application_id: number | null;
   absence_session: AttendanceAbsenceSession | null;
   absence_session_label: string | null;
   late_minutes: number;

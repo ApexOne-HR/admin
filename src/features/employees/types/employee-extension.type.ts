@@ -92,6 +92,7 @@ export type EmployeeLeaveApplication = {
   start_session: 'full' | 'am' | 'pm';
   end_session: 'full' | 'am' | 'pm';
   requested_days: number;
+  counted_dates?: Array<{ date: string; session: 'full' | 'am' | 'pm'; amount: number }>;
   reason: string | null;
   status: 'approved' | 'cancelled';
   creation_source: 'admin' | 'employee';

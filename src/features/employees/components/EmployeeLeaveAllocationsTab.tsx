@@ -472,7 +472,8 @@ export function EmployeeLeaveAllocationsTab({
             minRows={2}
           />
           <Typography variant="body2" color="text.secondary">
-            Days to record: {previewDays || '—'} (saved as approved, no approval step)
+            Estimated calendar span: {previewDays || '—'} (server counts working days,
+            holidays, and sandwich; Admin may record past dates; saved as approved)
           </Typography>
         </Stack>
       </AppModal>
