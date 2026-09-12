@@ -83,13 +83,21 @@ export function attendanceSourceLabel(source: AttendanceSource): string {
   }[source];
 }
 
-/** Calendar day chip: Manual punches keep status and add a Manual label. */
+/** Calendar day chip: Manual and leave session details. */
 export function attendanceCalendarDayMeta(record: AttendanceRecord): {
   label: string;
   color: ChipProps['color'];
   showManual: boolean;
+  leaveSessionLabel: string | null;
 } {
   const status = attendanceStatusMeta(record.status);
+
+  let leaveSessionLabel: string | null = null;
+  if (record.status === 'on_leave' || record.leave_session) {
+    if (record.leave_session === 'am') leaveSessionLabel = 'Morning';
+    else if (record.leave_session === 'pm') leaveSessionLabel = 'Evening';
+    else leaveSessionLabel = 'Full day';
+  }
 
   return {
     label: status.label,
@@ -97,6 +105,7 @@ export function attendanceCalendarDayMeta(record: AttendanceRecord): {
     showManual:
       record.source === 'manual'
       && (record.status === 'present' || record.status === 'incomplete'),
+    leaveSessionLabel,
   };
 }
 

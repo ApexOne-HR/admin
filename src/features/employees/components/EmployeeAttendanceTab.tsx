@@ -1145,6 +1145,18 @@ export function EmployeeAttendanceTab({
                                       }}
                                     />
                                   ) : null}
+                                  {dayMeta.leaveSessionLabel ? (
+                                    <Chip
+                                      size="small"
+                                      label={dayMeta.leaveSessionLabel}
+                                      color="info"
+                                      variant="outlined"
+                                      sx={{
+                                        height: 22,
+                                        '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                                      }}
+                                    />
+                                  ) : null}
                                 </Stack>
                               </Tooltip>
                               {record.is_voided ? (
@@ -1243,7 +1255,13 @@ export function EmployeeAttendanceTab({
                               <Typography variant="caption" sx={{ fontWeight: 700 }}>
                                 {date}
                                 {dayMeta
-                                  ? ` · ${dayMeta.label}${dayMeta.showManual ? ' · Manual' : ''}`
+                                  ? ` · ${dayMeta.label}${
+                                    dayMeta.showManual ? ' · Manual' : ''
+                                  }${
+                                    dayMeta.leaveSessionLabel
+                                      ? ` · ${dayMeta.leaveSessionLabel}`
+                                      : ''
+                                  }`
                                   : ''}
                               </Typography>
                               <Typography variant="caption">
