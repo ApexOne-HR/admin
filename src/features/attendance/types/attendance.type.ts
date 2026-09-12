@@ -4,7 +4,7 @@ export type AttendanceStatus =
   | 'on_leave'
   | 'incomplete';
 
-export type AttendanceSource = 'admin' | 'mobile' | 'system';
+export type AttendanceSource = 'admin' | 'mobile' | 'manual' | 'system';
 export type AttendanceLeaveSession = 'full' | 'am' | 'pm';
 export type AttendanceAbsenceSession = 'full' | 'am' | 'pm';
 export type AttendanceLeaveDuration = 'full_day' | 'half_day';
@@ -86,6 +86,7 @@ export type AttendanceRecord = {
   overtime_minutes: number;
   source: AttendanceSource;
   source_label: string;
+  reason: string | null;
   is_voided: boolean;
   voided_at: string | null;
   void_reason: string | null;

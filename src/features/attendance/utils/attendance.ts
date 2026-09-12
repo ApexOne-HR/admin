@@ -53,6 +53,7 @@ export function attendanceEntryTypeOptionsForUi(
 export const ATTENDANCE_SOURCE_OPTIONS: AttendanceSource[] = [
   'admin',
   'mobile',
+  'manual',
   'system',
 ];
 
@@ -77,8 +78,26 @@ export function attendanceSourceLabel(source: AttendanceSource): string {
   return {
     admin: 'Admin',
     mobile: 'Mobile',
+    manual: 'Manual',
     system: 'System',
   }[source];
+}
+
+/** Calendar day chip: Manual punches keep status and add a Manual label. */
+export function attendanceCalendarDayMeta(record: AttendanceRecord): {
+  label: string;
+  color: ChipProps['color'];
+  showManual: boolean;
+} {
+  const status = attendanceStatusMeta(record.status);
+
+  return {
+    label: status.label,
+    color: status.color,
+    showManual:
+      record.source === 'manual'
+      && (record.status === 'present' || record.status === 'incomplete'),
+  };
 }
 
 export function formatAttendanceDateTime(

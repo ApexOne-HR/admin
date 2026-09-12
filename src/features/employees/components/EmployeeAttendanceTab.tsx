@@ -51,6 +51,7 @@ import type {
 } from '@/features/attendance/types/attendance.type';
 import {
   ATTENDANCE_ENTRY_TYPE_OPTIONS,
+  attendanceCalendarDayMeta,
   attendanceSourceLabel,
   attendanceStatusMeta,
   formatAttendanceDateTime,
@@ -1037,8 +1038,8 @@ export function EmployeeAttendanceTab({
 
                       const record = recordsByDate.get(date);
                       const isToday = date === today;
-                      const statusMeta = record
-                        ? attendanceStatusMeta(record.status)
+                      const dayMeta = record
+                        ? attendanceCalendarDayMeta(record)
                         : null;
                       const dayNumber = Number(date.slice(8, 10));
                       const holidayName = holidayNames.get(date);
@@ -1103,28 +1104,48 @@ export function EmployeeAttendanceTab({
                           >
                             {dayNumber}
                           </Typography>
-                          {record && statusMeta ? (
+                          {record && dayMeta ? (
                             <Stack spacing={0.5} sx={{ mt: 'auto' }}>
                               <Tooltip
                                 title={
-                                  record.leave_application?.reason?.trim()
-                                    ? record.leave_application.reason
-                                    : record.leave_application?.leave_type?.name
-                                      ? `${record.leave_application.leave_type.name} leave`
-                                      : undefined
+                                  record.source === 'manual' && record.reason?.trim()
+                                    ? record.reason
+                                    : record.leave_application?.reason?.trim()
+                                      ? record.leave_application.reason
+                                      : record.leave_application?.leave_type?.name
+                                        ? `${record.leave_application.leave_type.name} leave`
+                                        : undefined
                                 }
                               >
-                                <Chip
-                                  size="small"
-                                  label={statusMeta.label}
-                                  color={statusMeta.color}
-                                  variant="outlined"
-                                  sx={{
-                                    height: 22,
-                                    alignSelf: 'flex-start',
-                                    '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
-                                  }}
-                                />
+                                <Stack
+                                  direction="row"
+                                  spacing={0.5}
+                                  useFlexGap
+                                  sx={{ flexWrap: 'wrap', alignSelf: 'flex-start' }}
+                                >
+                                  <Chip
+                                    size="small"
+                                    label={dayMeta.label}
+                                    color={dayMeta.color}
+                                    variant="outlined"
+                                    sx={{
+                                      height: 22,
+                                      '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                                    }}
+                                  />
+                                  {dayMeta.showManual ? (
+                                    <Chip
+                                      size="small"
+                                      label="Manual"
+                                      color="secondary"
+                                      variant="outlined"
+                                      sx={{
+                                        height: 22,
+                                        '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                                      }}
+                                    />
+                                  ) : null}
+                                </Stack>
                               </Tooltip>
                               {record.is_voided ? (
                                 <Chip
@@ -1221,7 +1242,9 @@ export function EmployeeAttendanceTab({
                             <Stack spacing={0.5} sx={{ py: 0.25 }}>
                               <Typography variant="caption" sx={{ fontWeight: 700 }}>
                                 {date}
-                                {statusMeta ? ` · ${statusMeta.label}` : ''}
+                                {dayMeta
+                                  ? ` · ${dayMeta.label}${dayMeta.showManual ? ' · Manual' : ''}`
+                                  : ''}
                               </Typography>
                               <Typography variant="caption">
                                 Check-in: {checkInTimeLabel}
