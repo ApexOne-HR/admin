@@ -7,6 +7,7 @@ import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import FestivalRoundedIcon from '@mui/icons-material/FestivalRounded';
 import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
+import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
@@ -14,7 +15,7 @@ import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
-import { Collapse, Typography } from '@mui/material';
+import { Badge, Collapse, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -27,6 +28,7 @@ import {
 } from '@/config/navigation';
 import { can } from '@/features/auth/services/auth.service';
 import { useAdminSession } from '@/features/auth/hooks/useAdminSession';
+import { usePendingLeaveRequestCountQuery } from '@/features/leave-requests/hooks/useLeaveRequestQueries';
 
 const navigationIcons: Record<NavigationItemId, typeof DashboardRoundedIcon> = {
   dashboard: DashboardRoundedIcon,
@@ -34,6 +36,7 @@ const navigationIcons: Record<NavigationItemId, typeof DashboardRoundedIcon> = {
   masters: TuneRoundedIcon,
   holidays: FestivalRoundedIcon,
   leave: EventAvailableRoundedIcon,
+  'leave-requests': PendingActionsRoundedIcon,
   compensation: PaymentsRoundedIcon,
   fiscal: CalendarMonthRoundedIcon,
   employees: BadgeRoundedIcon,
@@ -74,10 +77,17 @@ function groupHasActiveChild(entry: NavigationEntry, pathname: string): boolean 
   return isNavigationGroup(entry) && entry.children.some((child) => child.path === pathname);
 }
 
+function formatBadgeCount(count: number): string {
+  return count > 99 ? '99+' : String(count);
+}
+
 export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
   const location = useLocation();
   const { session } = useAdminSession();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const canViewLeaveRequests = can(session?.user, 'leaves.view');
+  const pendingLeaveQuery = usePendingLeaveRequestCountQuery(canViewLeaveRequests);
+  const pendingLeaveCount = pendingLeaveQuery.data ?? 0;
 
   const visibleNavigation = useMemo(
     () => filterNavigationByPermission(adminNavigation, (slug) => can(session?.user, slug)),
@@ -100,22 +110,62 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
     setOpenGroups((current) => ({ ...current, [id]: !current[id] }));
   };
 
+  const badgeForItem = (item: NavigationItem): number => {
+    if (item.id === 'leave-requests') {
+      return pendingLeaveCount;
+    }
+    return 0;
+  };
+
   const renderLink = (item: NavigationItem, nested = false) => {
     const isActive = location.pathname === item.path;
     const Icon = navigationIcons[item.id];
+    const badgeCount = badgeForItem(item);
+    const title = collapsed
+      ? badgeCount > 0
+        ? `${item.label} (${badgeCount} pending)`
+        : item.label
+      : undefined;
 
     return (
       <Link
         key={item.id}
-        title={collapsed ? item.label : undefined}
+        title={title}
         to={item.path}
         onClick={onNavigate}
         className={navItemClass(isActive, collapsed, nested)}
       >
-        <span className={iconWrapClass(isActive, nested)}>
-          <Icon sx={{ fontSize: nested ? 20 : 22 }} />
-        </span>
-        {!collapsed ? <span className="truncate">{item.label}</span> : null}
+        {collapsed ? (
+          <Badge
+            color="warning"
+            badgeContent={badgeCount > 0 ? formatBadgeCount(badgeCount) : 0}
+            invisible={badgeCount <= 0}
+            overlap="circular"
+            sx={{
+              '& .MuiBadge-badge': {
+                fontSize: 10,
+                minWidth: 18,
+                height: 18,
+              },
+            }}
+          >
+            <span className={iconWrapClass(isActive, nested)}>
+              <Icon sx={{ fontSize: nested ? 20 : 22 }} />
+            </span>
+          </Badge>
+        ) : (
+          <>
+            <span className={iconWrapClass(isActive, nested)}>
+              <Icon sx={{ fontSize: nested ? 20 : 22 }} />
+            </span>
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            {badgeCount > 0 ? (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                {formatBadgeCount(badgeCount)}
+              </span>
+            ) : null}
+          </>
+        )}
       </Link>
     );
   };

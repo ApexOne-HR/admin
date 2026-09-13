@@ -4,6 +4,7 @@ export type NavigationItemId =
   | 'masters'
   | 'holidays'
   | 'leave'
+  | 'leave-requests'
   | 'fiscal'
   | 'compensation'
   | 'employees'
@@ -50,6 +51,13 @@ export const adminNavigation: NavigationEntry[] = [
     path: '/attendance',
     description: 'Employee attendance records.',
     permission: 'attendance.view',
+  },
+  {
+    id: 'leave-requests',
+    label: 'Leave requests',
+    path: '/leave-requests',
+    description: 'Approve or reject employee leave applications.',
+    permission: 'leaves.view',
   },
   {
     id: 'employees',

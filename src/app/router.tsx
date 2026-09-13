@@ -4,6 +4,7 @@ import { OrganizationPage } from '@/features/organization/pages/OrganizationPage
 import { OrgChartPage } from '@/features/organization/pages/OrgChartPage';
 import { MastersPage } from '@/features/masters/pages/MastersPage';
 import { HolidaysPage } from '@/features/holidays/pages/HolidaysPage';
+import { LeaveRequestsPage } from '@/features/leave-requests/pages/LeaveRequestsPage';
 import { LeavePage } from '@/features/leave/pages/LeavePage';
 import { CompensationPage } from '@/features/compensation/pages/CompensationPage';
 import { FiscalYearsPage } from '@/features/fiscal/pages/FiscalYearsPage';
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
           { path: 'attendance', element: <AttendanceRecordsPage /> },
           { path: 'attendance/new', element: <AttendanceRecordCreatePage /> },
           { path: 'attendance/:id', element: <AttendanceRecordDetailPage /> },
+          { path: 'leave-requests', element: <LeaveRequestsPage /> },
           { path: 'users', element: <UsersPage /> },
           { path: 'roles', element: <RolesPage /> },
           { path: 'permissions', element: <PermissionsPage /> },

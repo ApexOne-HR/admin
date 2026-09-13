@@ -1,8 +1,10 @@
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import {
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Stack,
   Typography,
 } from '@mui/material';
@@ -16,6 +18,7 @@ export type AppModalProps = {
   children?: ReactNode;
   actions?: ReactNode;
   maxWidth?: DialogProps['maxWidth'];
+  showCloseButton?: boolean;
   onClose: () => void;
 };
 
@@ -26,11 +29,17 @@ export function AppModal({
   maxWidth = 'sm',
   onClose,
   open,
+  showCloseButton = false,
   title,
 }: AppModalProps) {
   return (
     <Dialog fullWidth maxWidth={maxWidth} onClose={onClose} open={open}>
-      <DialogTitle>
+      <DialogTitle
+        sx={{
+          position: 'relative',
+          pr: showCloseButton ? 6 : undefined,
+        }}
+      >
         <Stack spacing={0.75}>
           <Typography variant="h3">{title}</Typography>
           {description ? (
@@ -39,6 +48,20 @@ export function AppModal({
             </Typography>
           ) : null}
         </Stack>
+        {showCloseButton ? (
+          <IconButton
+            aria-label="Close"
+            onClick={onClose}
+            size="small"
+            sx={{
+              position: 'absolute',
+              right: 12,
+              top: 12,
+            }}
+          >
+            <CloseRoundedIcon fontSize="small" />
+          </IconButton>
+        ) : null}
       </DialogTitle>
 
       {children ? <DialogContent>{children}</DialogContent> : null}
