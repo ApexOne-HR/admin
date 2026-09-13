@@ -95,7 +95,6 @@ type FormState = {
   late_grace_minutes: string;
   early_leave_grace_minutes: string;
   ot_allowed: boolean;
-  is_sandwich_leave_applicable: boolean;
   work_schedule_id: number | '';
   holiday_calendar_id: number | '';
   is_active: boolean;
@@ -169,7 +168,6 @@ const emptyForm: FormState = {
   late_grace_minutes: '15',
   early_leave_grace_minutes: '0',
   ot_allowed: true,
-  is_sandwich_leave_applicable: false,
   work_schedule_id: '',
   holiday_calendar_id: '',
   is_active: true,
@@ -302,7 +300,6 @@ export function MastersPage() {
       late_grace_minutes: String(row.late_grace_minutes ?? 15),
       early_leave_grace_minutes: String(row.early_leave_grace_minutes ?? 0),
       ot_allowed: row.ot_allowed,
-      is_sandwich_leave_applicable: row.is_sandwich_leave_applicable,
       work_schedule_id: row.work_schedule_id ?? '',
       holiday_calendar_id: row.holiday_calendar_id ?? '',
       is_active: row.is_active,
@@ -454,7 +451,6 @@ export function MastersPage() {
           late_grace_minutes: Number(form.late_grace_minutes) || 0,
           early_leave_grace_minutes: Number(form.early_leave_grace_minutes) || 0,
           ot_allowed: form.ot_allowed,
-          is_sandwich_leave_applicable: form.is_sandwich_leave_applicable,
           work_schedule_id: form.work_schedule_id === '' ? null : Number(form.work_schedule_id),
           holiday_calendar_id:
             form.holiday_calendar_id === '' ? null : Number(form.holiday_calendar_id),
@@ -1033,20 +1029,6 @@ export function MastersPage() {
                   />
                 }
                 label="OT allowed"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.is_sandwich_leave_applicable}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        is_sandwich_leave_applicable: event.target.checked,
-                      }))
-                    }
-                  />
-                }
-                label="Sandwich leave applicable"
               />
             </>
           ) : null}

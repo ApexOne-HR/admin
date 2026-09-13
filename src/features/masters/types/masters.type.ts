@@ -54,7 +54,6 @@ export type Policy = {
   late_grace_minutes: number;
   early_leave_grace_minutes: number;
   ot_allowed: boolean;
-  is_sandwich_leave_applicable: boolean;
   work_schedule_id: number | null;
   holiday_calendar_id: number | null;
   is_active: boolean;
@@ -97,7 +96,6 @@ export type PolicyPayload = {
   late_grace_minutes?: number;
   early_leave_grace_minutes?: number;
   ot_allowed?: boolean;
-  is_sandwich_leave_applicable?: boolean;
   work_schedule_id?: number | null;
   holiday_calendar_id?: number | null;
   is_active?: boolean;

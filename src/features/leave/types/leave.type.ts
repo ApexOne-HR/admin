@@ -8,6 +8,8 @@ export type LeaveType = {
   is_active: boolean;
   allowed_in_probation: boolean;
   allow_half_day: boolean;
+  sandwich_allow: boolean;
+  requires_document: boolean;
   allowed_gender: LeaveAllowedGender | null;
   min_notice_days: number;
   max_late_request_days: number;
@@ -51,6 +53,8 @@ export type LeaveTypePayload = {
   is_active?: boolean;
   allowed_in_probation?: boolean;
   allow_half_day?: boolean;
+  sandwich_allow?: boolean;
+  requires_document?: boolean;
   allowed_gender?: LeaveAllowedGender | null;
   min_notice_days?: number;
   max_late_request_days?: number;

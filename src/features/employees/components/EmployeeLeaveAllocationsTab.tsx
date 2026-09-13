@@ -473,7 +473,7 @@ export function EmployeeLeaveAllocationsTab({
           />
           <Typography variant="body2" color="text.secondary">
             Estimated calendar span: {previewDays || '—'} (server counts working days,
-            holidays, and sandwich; Admin may record past dates; saved as approved)
+            holidays, sandwich when type allows, and notice rules; Admin may record past dates; saved as approved)
           </Typography>
         </Stack>
       </AppModal>

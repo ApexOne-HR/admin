@@ -75,6 +75,8 @@ type FormState = {
   is_active: boolean;
   allowed_in_probation: boolean;
   allow_half_day: boolean;
+  sandwich_allow: boolean;
+  requires_document: boolean;
   allowed_gender: '' | 'male' | 'female';
   min_notice_days: string;
   max_late_request_days: string;
@@ -89,6 +91,8 @@ const emptyForm: FormState = {
   is_active: true,
   allowed_in_probation: true,
   allow_half_day: false,
+  sandwich_allow: false,
+  requires_document: false,
   allowed_gender: '',
   min_notice_days: '0',
   max_late_request_days: '0',
@@ -167,6 +171,8 @@ export function LeavePage() {
       is_active: row.is_active,
       allowed_in_probation: row.allowed_in_probation,
       allow_half_day: row.allow_half_day,
+      sandwich_allow: row.sandwich_allow,
+      requires_document: row.requires_document,
       allowed_gender: row.allowed_gender ?? '',
       min_notice_days: String(row.min_notice_days ?? 0),
       max_late_request_days: String(row.max_late_request_days ?? 0),
@@ -227,6 +233,8 @@ export function LeavePage() {
           is_active: form.is_active,
           allowed_in_probation: form.allowed_in_probation,
           allow_half_day: form.allow_half_day,
+          sandwich_allow: form.sandwich_allow,
+          requires_document: form.requires_document,
           allowed_gender: form.allowed_gender || null,
           min_notice_days: Number(form.min_notice_days) || 0,
           max_late_request_days: Number(form.max_late_request_days) || 0,
@@ -318,6 +326,16 @@ export function LeavePage() {
       key: 'unit',
       header: 'Day unit',
       render: (row) => (row.allow_half_day ? 'Full / Half' : 'Full'),
+    },
+    {
+      key: 'sandwich',
+      header: 'Sandwich',
+      render: (row) => (row.sandwich_allow ? 'Yes' : 'No'),
+    },
+    {
+      key: 'document',
+      header: 'Document',
+      render: (row) => (row.requires_document ? 'Required' : '—'),
     },
     {
       key: 'status',
@@ -755,6 +773,28 @@ export function LeavePage() {
                   />
                 }
                 label="Allow half day"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.sandwich_allow}
+                    onChange={(_, checked) =>
+                      setForm((current) => ({ ...current, sandwich_allow: checked }))
+                    }
+                  />
+                }
+                label="Allow sandwich leave"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.requires_document}
+                    onChange={(_, checked) =>
+                      setForm((current) => ({ ...current, requires_document: checked }))
+                    }
+                  />
+                }
+                label="Requires document"
               />
             </Stack>
           ) : null}

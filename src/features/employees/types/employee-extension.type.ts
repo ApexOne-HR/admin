@@ -70,6 +70,8 @@ export type EmployeeLeaveAllocation = {
     name: string;
     is_paid: boolean;
     allow_half_day?: boolean;
+    sandwich_allow?: boolean;
+    requires_document?: boolean;
   } | null;
   package_item?: {
     id: number;
